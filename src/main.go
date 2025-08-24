@@ -4,11 +4,16 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/go-echarts/go-echarts/v2/charts"
+	"github.com/go-echarts/go-echarts/v2/components"
+	"github.com/go-echarts/go-echarts/v2/opts"
 )
 
 var fileNameFlag string
@@ -21,21 +26,63 @@ func main() {
 	convertPdfToText(fileName)
 	lines := readAllLines(strings.Replace(fileName, ".pdf", ".txt", 1))
 	spendings, incomes := calculateTotalTransactions(lines)
+	drawPieChart(fileName, spendings, incomes)
 
 	fmt.Printf("Spendings: %.2f\n", spendings)
 	fmt.Printf("Incomes: %.2f", incomes)
 }
 
 func calculateTotalTransactions(lines []string) (spendings, incomes float64) {
+	var previousBalance float64
+	var closingBalance float64
+	const previousBalanceLabel = "Saldo poprzednie"
+	const closingBalanceLabel = "Saldo końcowe"
+
 	for _, line := range lines {
 		sections := divideLineIntoSections(line)
 
-		if len(sections) >= 4 {
+		if len(sections) == 2 {
+			if sections[0] == previousBalanceLabel {
+				validFloat, err := convertToValidFloat(sections[1])
+
+				if err != nil {
+					if debugFlag {
+						fmt.Println("WARNING: Failed converting value. Expected a number, but got:", sections[1])
+					}
+
+					continue
+				}
+
+				previousBalance = validFloat
+
+				if debugFlag {
+					fmt.Printf("INFO: Scanned initial balance: %.2f\n", previousBalance)
+				}
+			} else if sections[0] == closingBalanceLabel {
+				validFloat, err := convertToValidFloat(sections[1])
+
+				if err != nil {
+					if debugFlag {
+						fmt.Println("WARNING: Failed converting value. Expected a number, but got:", sections[1])
+					}
+
+					continue
+				}
+
+				closingBalance = validFloat
+
+				if debugFlag {
+					fmt.Printf("INFO: Scanned closing balance: %.2f\n", closingBalance)
+				}
+			}
+		}
+
+		if len(sections) == 5 {
 			validFloat, err := convertToValidFloat(sections[3])
 
 			if err != nil {
 				if debugFlag {
-					fmt.Println("INFO: Failed converting value. Expected a number, but got:", sections[3])
+					fmt.Println("WARNING: Failed converting value. Expected a number, but got:", sections[3])
 				}
 
 				continue
@@ -53,7 +100,45 @@ func calculateTotalTransactions(lines []string) (spendings, incomes float64) {
 		}
 	}
 
+	calculatedBalance := previousBalance + spendings + incomes
+
+	if calculatedBalance != closingBalance {
+		panic(fmt.Sprintf(
+			"WARNING: Calculated balance (%.2f) does not match closing balance (%.2f)",
+			calculatedBalance,
+			closingBalance,
+		))
+	}
+
+	if debugFlag {
+		fmt.Println("INFO: Calculated balance matches closing balance")
+	}
+
 	return spendings, incomes
+}
+
+func drawPieChart(fileName string, spendings float64, incomes float64) {
+	data := []opts.PieData{
+		{Name: "Spendings", Value: fmt.Sprintf("%.2f", spendings*-1)},
+		{Name: "Incomes", Value: fmt.Sprintf("%.2f", incomes)},
+	}
+
+	pieChart := charts.NewPie()
+	pieChart.SetGlobalOptions(charts.WithTitleOpts(opts.Title{Title: "Total transactions"}))
+	pieChart.AddSeries("", data)
+
+	page := components.NewPage()
+	page.AddCharts(pieChart)
+
+	file, err := os.Create(strings.Replace(fileName, ".pdf", ".html", 1))
+
+	if err != nil {
+		panic(fmt.Sprintf("Error while creating HTML file: %v", err))
+	}
+
+	if err := page.Render(io.MultiWriter(file)); err != nil {
+		panic(fmt.Sprintf("Error while rendering HTML file: %v", err))
+	}
 }
 
 func convertToValidFloat(str string) (float64, error) {
@@ -111,8 +196,6 @@ func getFileName() string {
 
 	if fileNameFlag != "" {
 		fileName = fileNameFlag
-	} else if nonFlagArgs := flag.Args(); len(nonFlagArgs) > 1 {
-		fileName = nonFlagArgs[1]
 	} else {
 		panic("File name was not provided.")
 	}
