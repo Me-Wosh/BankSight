@@ -1,0 +1,119 @@
+# ===========================
+# Groceries / Supermarkets / Food
+# ===========================
+
+"zabka": "Convenience"
+
+"biedronka": "Discount"
+"lidl": "Discount"
+"dino": "Discount"
+"netto": "Discount"
+"aldi": "Discount"
+
+"stokrotka": "Supermarket"
+"polomarket": "Supermarket"
+"intermarche": "Supermarket"
+"spolem": "Supermarket"
+
+"kaufland": "Hypermarket"
+"carrefour": "Hypermarket"
+"auchan": "Hypermarket"
+"e.leclerc": "Hypermarket"
+
+"makro": "Wholesale"
+
+"lupus": "Pizza"
+
+"kfc": "Fast food"
+
+"uber * eats": "Food delivery"
+"pyszne.pl": "Food delivery"
+"glovo": "Food delivery"
+"bolt food": "Food delivery"
+
+# ===========================
+# Electronics / Media
+# ===========================
+"mediamarkt": "Electronics"
+"rtv euro agd": "Electronics"
+"komputronik": "Electronics"
+"neonet": "Electronics"
+"media expert": "Electronics"
+"morele.net": "Electronics"
+"x-kom": "Electronics"
+"euro.com.pl": "Electronics"
+
+# ===========================
+# Fashion / Clothing
+# ===========================
+"sinsay": "Clothing"
+"reserved": "Clothing"
+"cropp": "Clothing"
+"house": "Clothing"
+"hm": "Clothing"
+"zalando": "Clothing"
+"4f": "Clothing"
+"pull and bear": "Clothing"
+"answear": "Clothing"
+
+# ===========================
+# Home
+# ===========================
+"castorama": "Home"
+"leroy merlin": "Home"
+"obi": "Home"
+"brico": "Home"
+"ikea": "Home"
+"black red white": "Home"
+"agata meble": "Home"
+"jysk": "Home"
+
+# ===========================
+# Rent / Utilities
+# ===========================
+"oplaty": "Rent"
+
+# ===========================
+# Books / Media / Culture
+# ===========================
+"empik": "Culture"
+
+# ===========================
+# Sports / Outdoor
+# ===========================
+"decathlon": "Sport"
+
+# ===========================
+# Beauty / Cosmetics
+# ===========================
+"rossmann": "Beauty"
+"hebe": "Beauty"
+"notino": "Beauty"
+"sephora": "Beauty"
+
+# ===========================
+# Health
+# ===========================
+"apteka": "Health"
+
+# ===========================
+# General / Multifaceted
+# ===========================
+"allegro": "General"
+"amazon": "General"
+"ceneo": "General"
+"skapiec": "General"
+"pepco": "General"
+"dealz": "General"
+
+# ===========================
+# Transport / Fuel
+# ===========================
+"koleo": "Transport"
+"flixbus": "Transport"
+"lot": "Transport"
+"blablacar": "Transport"
+"free now": "Transport"
+"jakdojade": "Transport"
+
+"circle k": "Gas station"
