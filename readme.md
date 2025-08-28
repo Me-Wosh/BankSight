@@ -5,7 +5,7 @@
 
 ### Usage
 
-`go run main.go -f "path_to_file"` or `go run main.go --file "path_to_file"`
+`go run . -f "path_to_file"` or `go run . --file "path_to_file"`
 
 ### Flags
 
