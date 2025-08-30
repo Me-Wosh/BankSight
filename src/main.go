@@ -7,6 +7,6 @@ func main() {
 	lines := readAllLines(textFileName)
 	timePeriod := getTimePeriod(lines)
 
-	spendings, incomes, categoriesBalance := calculateTotalTransactions(lines, flags.debug)
-	drawPieChart(spendings, incomes, categoriesBalance, timePeriod, fileName)
+	transactions := calculateTotalTransactions(lines, flags.debug)
+	drawPieChart(transactions, timePeriod, fileName)
 }

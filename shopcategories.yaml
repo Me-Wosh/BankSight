@@ -1,35 +1,31 @@
 # ===========================
-# Groceries / Supermarkets / Food
+# Groceries / Household
 # ===========================
+"zabka": "Groceries/Household"
+"biedronka": "Groceries/Household"
+"lidl": "Groceries/Household"
+"dino": "Groceries/Household"
+"netto": "Groceries/Household"
+"aldi": "Groceries/Household"
+"stokrotka": "Groceries/Household"
+"polomarket": "Groceries/Household"
+"intermarche": "Groceries/Household"
+"spolem": "Groceries/Household"
+"kaufland": "Groceries/Household"
+"carrefour": "Groceries/Household"
+"auchan": "Groceries/Household"
+"e.leclerc": "Groceries/Household"
+"makro": "Groceries/Household"
 
-"zabka": "Convenience"
-
-"biedronka": "Discount"
-"lidl": "Discount"
-"dino": "Discount"
-"netto": "Discount"
-"aldi": "Discount"
-
-"stokrotka": "Supermarket"
-"polomarket": "Supermarket"
-"intermarche": "Supermarket"
-"spolem": "Supermarket"
-
-"kaufland": "Hypermarket"
-"carrefour": "Hypermarket"
-"auchan": "Hypermarket"
-"e.leclerc": "Hypermarket"
-
-"makro": "Wholesale"
-
-"lupus": "Pizza"
-
-"kfc": "Fast food"
-
-"uber * eats": "Food delivery"
-"pyszne.pl": "Food delivery"
-"glovo": "Food delivery"
-"bolt food": "Food delivery"
+# ===========================
+# Eating out / Delivery
+# ===========================
+"lupus": "Eating out/Delivery"
+"kfc": "Eating out/Delivery"
+"uber * eats": "Eating out/Delivery"
+"pyszne.pl": "Eating out/Delivery"
+"glovo": "Eating out/Delivery"
+"bolt food": "Eating out/Delivery"
 
 # ===========================
 # Electronics / Media

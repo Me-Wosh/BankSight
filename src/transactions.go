@@ -7,24 +7,37 @@ import (
 	"strings"
 )
 
-func calculateTotalTransactions(lines []string, debugFlag bool) (
-	spendings, incomes float64,
-	categoriesBalance map[string]float64,
-) {
-	categories := getShopCategories()
-	categoriesBalance = make(map[string]float64)
+type transactions struct {
+	spendings, incomes              float64
+	previousBalance, closingBalance float64
+	categoriesBalance               map[string]map[string]float64
+}
+
+func calculateTotalTransactions(lines []string, debugFlag bool) transactions {
+	shopCategories := getShopCategories()
+	categoriesBalance := make(map[string]map[string]float64)
 	operations := map[string]struct{}{
 		"zakup":    {},
 		"przelew":  {},
 		"płatność": {},
 		"opłata":   {},
 	}
-	var lastOperation string
-	var lastAmount float64
-	var previousBalance float64
-	var closingBalance float64
-	const previousBalanceLabel = "Saldo poprzednie"
-	const closingBalanceLabel = "Saldo końcowe"
+
+	var (
+		spendings       float64
+		incomes         float64
+		previousBalance float64
+		closingBalance  float64
+		lastOperation   string
+		lastAmount      float64
+	)
+
+	const (
+		otherCategory        = "Other"
+		totalKey             = "total"
+		previousBalanceLabel = "Saldo poprzednie"
+		closingBalanceLabel  = "Saldo końcowe"
+	)
 
 	for _, line := range lines {
 		sections := divideLineIntoSections(line)
@@ -83,13 +96,19 @@ func calculateTotalTransactions(lines []string, debugFlag bool) (
 			}
 
 			categoryFound := false
-			keys := maps.Keys(categories)
+			keys := maps.Keys(shopCategories)
 
 			for key := range keys {
 				if strings.Contains(combinedSections, key) {
 					categoryFound = true
-					category := categories[key]
-					categoriesBalance[category] += lastAmount
+					category := shopCategories[key]
+
+					if categoriesBalance[category] == nil {
+						categoriesBalance[category] = make(map[string]float64)
+					}
+
+					categoriesBalance[category][key] += lastAmount
+					categoriesBalance[category][totalKey] += lastAmount
 
 					if debugFlag {
 						fmt.Printf(
@@ -105,11 +124,18 @@ func calculateTotalTransactions(lines []string, debugFlag bool) (
 			}
 
 			if !categoryFound {
-				categoriesBalance["Other"] += lastAmount
+				if categoriesBalance[otherCategory] == nil {
+					categoriesBalance[otherCategory] = make(map[string]float64)
+				}
+
+				categoriesBalance[otherCategory][combinedSections] += lastAmount
+				categoriesBalance[otherCategory][totalKey] += lastAmount
+
 				if debugFlag {
 					fmt.Printf(
-						"WARNING: No category found for '%s', adding to 'Other', amount: %.2f\n",
+						"WARNING: No category found for '%s', adding to '%s', amount: %.2f\n",
 						combinedSections,
+						otherCategory,
 						lastAmount,
 					)
 				}
@@ -161,9 +187,10 @@ func calculateTotalTransactions(lines []string, debugFlag bool) (
 	}
 
 	var categorizedSpendings float64
-	values := maps.Values(categoriesBalance)
-	for value := range values {
-		categorizedSpendings += value
+	categories := maps.Values(categoriesBalance)
+
+	for category := range categories {
+		categorizedSpendings += category[totalKey]
 	}
 
 	if debugFlag {
@@ -178,5 +205,11 @@ func calculateTotalTransactions(lines []string, debugFlag bool) (
 		))
 	}
 
-	return spendings, incomes, categoriesBalance
+	return transactions{
+		spendings:         spendings,
+		incomes:           incomes,
+		previousBalance:   previousBalance,
+		closingBalance:    closingBalance,
+		categoriesBalance: categoriesBalance,
+	}
 }
