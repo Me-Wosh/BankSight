@@ -13,7 +13,7 @@ import (
 	"github.com/go-echarts/go-echarts/v2/types"
 )
 
-func drawPieChart(transactions transactions, subtitle, fileName string) {
+func drawPieChart(transactions transactions, subtitle, filePath string) {
 	const (
 		totalKey        = "total"
 		regularFontSize = 14
@@ -99,7 +99,7 @@ func drawPieChart(transactions transactions, subtitle, fileName string) {
 	page.AddCustomizedCSSAssets(cssFilePath)
 	page.AddCharts(pieChart)
 
-	file, err := os.Create(strings.Replace(fileName, ".pdf", ".html", 1))
+	file, err := os.Create(strings.Replace(filePath, ".txt", ".html", 1))
 
 	if err != nil {
 		panic(fmt.Sprintf("Error while creating HTML file: %v", err))

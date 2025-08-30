@@ -26,6 +26,7 @@
 "pyszne.pl": "Eating out/Delivery"
 "glovo": "Eating out/Delivery"
 "bolt food": "Eating out/Delivery"
+"pan viking": "Eating out/Delivery"
 
 # ===========================
 # Electronics / Media
@@ -111,5 +112,11 @@
 "blablacar": "Transport"
 "free now": "Transport"
 "jakdojade": "Transport"
+"systemfala.pl": "Transport"
 
 "circle k": "Gas station"
+
+# ===========================
+# Subscriptions
+# ===========================
+"apple.com/bill": "Subscriptions"
