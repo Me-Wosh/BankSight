@@ -4,23 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/goccy/go-yaml"
 )
-
-func convertPdfToText(filePath string) string {
-	textFilePath := strings.Replace(filepath.Base(filePath), ".pdf", ".txt", 1)
-	output, err := exec.Command("pdftotext", "-layout", filePath, textFilePath).CombinedOutput()
-
-	if err != nil {
-		panic(fmt.Sprintf("Error while converting PDF to text: %v. %s", err, output))
-	}
-
-	return textFilePath
-}
 
 func readAllLines(filePath string) []string {
 	file, err := os.Open(filePath)

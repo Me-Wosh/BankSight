@@ -108,4 +108,8 @@ func drawPieChart(transactions transactions, subtitle, filePath string) {
 	if err := page.Render(io.MultiWriter(file)); err != nil {
 		panic(fmt.Sprintf("Error while rendering HTML file: %v", err))
 	}
+
+	if err := openFileWithDefaultApp(file.Name()); err != nil {
+		fmt.Println("WARNING: could not open HTML file: ", err)
+	}
 }
