@@ -27,6 +27,8 @@
 "glovo": "Eating out/Delivery"
 "bolt food": "Eating out/Delivery"
 "pan viking": "Eating out/Delivery"
+"dos amigos event rumia": "Eating out/Delivery"
+"palec do budki": "Eating out/Delivery"
 
 # ===========================
 # Electronics / Media
@@ -69,6 +71,7 @@
 # Rent / Utilities
 # ===========================
 "oplaty": "Rent"
+"opłaty": "Rent"
 
 # ===========================
 # Books / Media / Culture
@@ -113,10 +116,15 @@
 "free now": "Transport"
 "jakdojade": "Transport"
 "systemfala.pl": "Transport"
-
-"circle k": "Gas station"
+"zakup biletu komunikacyjnego": "Transport"
+"circle k": "Transport"
 
 # ===========================
 # Subscriptions
 # ===========================
 "apple.com/bill": "Subscriptions"
+
+# ===========================
+# Services
+# ===========================
+"zeccer.pl": "Printing"

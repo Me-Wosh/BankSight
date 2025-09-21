@@ -10,6 +10,7 @@ import (
 type transactions struct {
 	spendings, incomes              float64
 	previousBalance, closingBalance float64
+	difference                      float64
 	categoriesBalance               map[string]map[string]float64
 }
 
@@ -89,7 +90,7 @@ func calculateTotalTransactions(lines []string, debugFlag bool) transactions {
 			var combinedSections string
 
 			if sectionsLength == 3 {
-				combinedSections = strings.ToLower(sections[1] + sections[2])
+				combinedSections = strings.ToLower(sections[1] + " " + sections[2])
 
 			} else {
 				combinedSections = strings.ToLower(sections[1])
@@ -211,5 +212,6 @@ func calculateTotalTransactions(lines []string, debugFlag bool) transactions {
 		previousBalance:   previousBalance,
 		closingBalance:    closingBalance,
 		categoriesBalance: categoriesBalance,
+		difference:        closingBalance - previousBalance,
 	}
 }

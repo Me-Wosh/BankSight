@@ -24,6 +24,7 @@ func drawPieChart(transactions transactions, subtitle, filePath string) {
 	previousBalance := transactions.previousBalance
 	closingBalance := transactions.closingBalance
 	categoriesBalance := transactions.categoriesBalance
+	difference := transactions.difference
 
 	spendingsIncomesData := []opts.PieData{
 		{Name: "Spendings", Value: fmt.Sprintf("%.2f", spendings*-1), Tooltip: &opts.Tooltip{Show: opts.Bool(false)}},
@@ -56,6 +57,12 @@ func drawPieChart(transactions transactions, subtitle, filePath string) {
 		})
 	}
 
+	var sign string
+
+	if difference > 0 {
+		sign = "+"
+	}
+
 	pieChart := charts.NewPie()
 
 	pieChart.SetGlobalOptions(
@@ -65,10 +72,12 @@ func drawPieChart(transactions transactions, subtitle, filePath string) {
 				FontSize: 20,
 			},
 			Subtitle: fmt.Sprintf(
-				"Time period: %s\n\nPrevious balance: %.2f zł\nClosing balance: %.2f zł",
+				"Time period: %s\n\nPrevious balance: %.2f zł\nClosing balance: %.2f zł\nDifference: %s%.2f zł",
 				subtitle,
 				previousBalance,
 				closingBalance,
+				sign,
+				difference,
 			),
 			SubtitleStyle: &opts.TextStyle{
 				FontSize:   15,
