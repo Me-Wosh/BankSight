@@ -9,22 +9,27 @@ Since my main personal bank never adds any useful features and I was shocked tha
 ## Prerequisites
 
 * latest [golang](https://go.dev/dl/) version (≥ 1.24.5)
-* latest [pdftotext](https://poppler.freedesktop.org) version (≥ 25.07.0)
+* latest [pdftotext](https://poppler.freedesktop.org) version (≥ 25.07.0) (if using PKO PDF statements)
 
-## Supported banks
+## Supported banks and file formats
 
-- PKO BP
+- **PKO BP**: PDF
+- **ING**: MT940 (.sta)
 
 ## Usage
 
-Download your bank statement as a PDF file, then run:
+Download your bank statement, then run:
 
-`go run . -f "path_to_file"` or `go run . --file "path_to_file"`
+`go run . -f "path_to_file" -b "your_bank"` or `go run . --file "path_to_file" --bank "your_bank"`
 
 ## Flags
 
 ```
-  -h    Help
+  -h help
+  -b string
+        Alias for -bank
+  -bank string
+        (Required) Name of the bank that generated the statement
   -d    Alias for -debug
   -debug
         (Optional) Enable debugging info
@@ -32,4 +37,7 @@ Download your bank statement as a PDF file, then run:
         Alias for -file
   -file string
         (Required) Path to the file containing bank statement lines
+  -o    Alias for -open-default-app (default true)
+  -open-default-app
+        (Optional) Open output file with the default application (default true)
 ```
