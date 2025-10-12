@@ -18,7 +18,7 @@ func setupCommandLineFlags() flags {
 	flag.StringVar(&flags.bank, "b", "", "Alias for -bank")
 	flag.BoolVar(&flags.debug, "debug", false, "(Optional) Enable debugging info")
 	flag.BoolVar(&flags.debug, "d", false, "Alias for -debug")
-	flag.BoolVar(&flags.openDefaultApp, "open-default-app", true, "(Optional) Open output file with the default application (by default true)")
+	flag.BoolVar(&flags.openDefaultApp, "open-default-app", true, "(Optional) Open output file with the default application")
 	flag.BoolVar(&flags.openDefaultApp, "o", true, "Alias for -open-default-app")
 	flag.Parse()
 
