@@ -13,17 +13,18 @@ import (
 	"github.com/go-echarts/go-echarts/v2/types"
 )
 
-func drawPieChart(transactions transactions, subtitle, filePath string) {
+func drawPieChart(transactions transactions, filePath string, openDefaultApp bool) {
 	const (
 		totalKey        = "total"
 		regularFontSize = 14
 	)
 
+	timePeriod := transactions.timePeriod
 	spendings := transactions.spendings
 	incomes := transactions.incomes
 	previousBalance := transactions.previousBalance
 	closingBalance := transactions.closingBalance
-	categoriesBalance := transactions.categoriesBalance
+	categorizedBalance := transactions.categorizedBalance
 	difference := transactions.difference
 
 	spendingsIncomesData := []opts.PieData{
@@ -32,10 +33,10 @@ func drawPieChart(transactions transactions, subtitle, filePath string) {
 	}
 
 	var categorizedSpendingsData []opts.PieData
-	categories := maps.Keys(categoriesBalance)
+	categories := maps.Keys(categorizedBalance)
 
 	for category := range categories {
-		shops := maps.Keys(categoriesBalance[category])
+		shops := maps.Keys(categorizedBalance[category])
 		var tooltip strings.Builder
 
 		for shop := range shops {
@@ -43,14 +44,14 @@ func drawPieChart(transactions transactions, subtitle, filePath string) {
 				continue
 			}
 
-			tooltip.WriteString(fmt.Sprintf("%s: %.2f zł<br/>", shop, categoriesBalance[category][shop]))
+			tooltip.WriteString(fmt.Sprintf("%s: %.2f zł<br/>", shop, categorizedBalance[category][shop]))
 		}
 
-		tooltip.WriteString(fmt.Sprintf("%s: %.2f zł", totalKey, categoriesBalance[category][totalKey]))
+		tooltip.WriteString(fmt.Sprintf("%s: %.2f zł", totalKey, categorizedBalance[category][totalKey]))
 
 		categorizedSpendingsData = append(categorizedSpendingsData, opts.PieData{
 			Name:  category,
-			Value: fmt.Sprintf("%.2f", categoriesBalance[category][totalKey]*-1),
+			Value: fmt.Sprintf("%.2f", categorizedBalance[category][totalKey]*-1),
 			Tooltip: &opts.Tooltip{
 				Formatter: types.FuncStr("<b>{b}</b><br/>" + tooltip.String()),
 			},
@@ -73,7 +74,7 @@ func drawPieChart(transactions transactions, subtitle, filePath string) {
 			},
 			Subtitle: fmt.Sprintf(
 				"Time period: %s\n\nPrevious balance: %.2f zł\nClosing balance: %.2f zł\nDifference: %s%.2f zł",
-				subtitle,
+				timePeriod,
 				previousBalance,
 				closingBalance,
 				sign,
@@ -118,7 +119,9 @@ func drawPieChart(transactions transactions, subtitle, filePath string) {
 		panic(fmt.Sprintf("Error while rendering HTML file: %v", err))
 	}
 
-	if err := openFileWithDefaultApp(file.Name()); err != nil {
-		fmt.Println("WARNING: could not open HTML file: ", err)
+	if openDefaultApp {
+		if err := openFileWithDefaultApp(file.Name()); err != nil {
+			fmt.Println("WARNING: could not open HTML file: ", err)
+		}
 	}
 }

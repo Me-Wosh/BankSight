@@ -52,18 +52,14 @@ func getShopCategories() map[string]string {
 	return categories
 }
 
-func getFilePath(filePathFlag string) string {
-	var filePath string
-
-	if filePathFlag != "" {
-		filePath = filePathFlag
-	} else {
-		panic("File path was not provided.")
+func getBank(bankFlag string) bank {
+	if strings.EqualFold(bankFlag, "pko") {
+		return &pko{}
 	}
 
-	if !strings.HasSuffix(filePath, ".pdf") {
-		panic("File must be a PDF file.")
+	if strings.EqualFold(bankFlag, "ing") {
+		return &ing{}
 	}
 
-	return filePath
+	panic(fmt.Sprintf("Unsupported bank: %s", bankFlag))
 }

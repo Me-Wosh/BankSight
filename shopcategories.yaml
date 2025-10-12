@@ -22,9 +22,15 @@
 # ===========================
 "lupus": "Eating out/Delivery"
 "kfc": "Eating out/Delivery"
+
 "uber * eats": "Eating out/Delivery"
+"uber.com": "Eating out/Delivery"
+
 "pyszne.pl": "Eating out/Delivery"
+
 "glovo": "Eating out/Delivery"
+"glovoapp.com/pl": "Eating out/Delivery"
+
 "bolt food": "Eating out/Delivery"
 "pan viking": "Eating out/Delivery"
 "dos amigos event rumia": "Eating out/Delivery"
@@ -37,7 +43,11 @@
 "rtv euro agd": "Electronics"
 "komputronik": "Electronics"
 "neonet": "Electronics"
+
 "media expert": "Electronics"
+"www.mediaexpert.pl": "Electronics"
+"terg spółka akcyjna": "Electronics"
+
 "morele.net": "Electronics"
 "x-kom": "Electronics"
 "euro.com.pl": "Electronics"
@@ -54,6 +64,7 @@
 "4f": "Clothing"
 "pull and bear": "Clothing"
 "answear": "Clothing"
+"zara.com": "Clothing"
 
 # ===========================
 # Home
@@ -77,6 +88,7 @@
 # Books / Media / Culture
 # ===========================
 "empik": "Culture"
+"empik.com": "Culture"
 
 # ===========================
 # Sports / Outdoor
@@ -100,6 +112,8 @@
 # General / Multifaceted
 # ===========================
 "allegro": "General"
+"allegro.pl": "General"
+
 "amazon": "General"
 "ceneo": "General"
 "skapiec": "General"
@@ -110,6 +124,9 @@
 # Transport / Fuel
 # ===========================
 "koleo": "Transport"
+"www.koleo.pl": "Transport"
+"astarium": "Transport"
+
 "flixbus": "Transport"
 "lot": "Transport"
 "blablacar": "Transport"
@@ -128,3 +145,19 @@
 # Services
 # ===========================
 "zeccer.pl": "Printing"
+
+# ===========================
+# Charity
+# ===========================
+"www.siepomaga.pl": "Charity"
+
+# ===========================
+# Toys
+# ===========================
+"strefa kostek": "Toys"
+"strefa-kostek.pl": "Toys"
+
+# ===========================
+# Savings
+# ===========================
+"przelew smart saver": "Savings"

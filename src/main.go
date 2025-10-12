@@ -2,11 +2,9 @@ package main
 
 func main() {
 	flags := setupCommandLineFlags()
-	filePath := getFilePath(flags.filePath)
-	textFilePath := convertPdfToText(filePath)
+	bank := getBank(flags.bank)
+	textFilePath := bank.prepareFile(flags.filePath)
 	lines := readAllLines(textFilePath)
-	timePeriod := getTimePeriod(lines)
-
-	transactions := calculateTotalTransactions(lines, flags.debug)
-	drawPieChart(transactions, timePeriod, textFilePath)
+	transactions := bank.calculateTotalTransactions(lines, flags.debug)
+	drawPieChart(transactions, textFilePath, flags.openDefaultApp)
 }

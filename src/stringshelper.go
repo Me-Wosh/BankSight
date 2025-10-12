@@ -24,9 +24,3 @@ func divideLineIntoSections(line string) []string {
 
 	return sections
 }
-
-func getTimePeriod(lines []string) string {
-	periodLine := strings.ToLower(lines[4])
-	_, after, _ := strings.Cut(periodLine, "okres ")
-	return after
-}

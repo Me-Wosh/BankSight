@@ -1,4 +1,5 @@
 *.pdf
+*.sta
 *.txt
 *.html
 .vscode
