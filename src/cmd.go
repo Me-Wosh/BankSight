@@ -2,21 +2,29 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os/exec"
-	"path/filepath"
 	"runtime"
-	"strings"
 )
 
-func convertPdfToText(filePath string) string {
-	textFilePath := strings.Replace(filepath.Base(filePath), ".pdf", ".txt", 1)
-	output, err := exec.Command("pdftotext", "-layout", filePath, textFilePath).CombinedOutput()
+func convertPdfToText(filePath string) (string, error) {
+	textFile, err := createTrackedTempFile(tempFilePatternPDFToText)
 
 	if err != nil {
-		panic(fmt.Sprintf("Error while converting PDF to text: %v. %s", err, output))
+		log.Printf("Error while creating temporary .txt file: %v\n", err)
+		return "", err
 	}
 
-	return textFilePath
+	defer textFile.Close()
+
+	output, err := exec.Command("pdftotext", "-layout", filePath, textFile.Name()).CombinedOutput()
+
+	if err != nil {
+		log.Printf("Error while converting PDF to text: %v. %s\n", err, output)
+		return "", err
+	}
+
+	return textFile.Name(), nil
 }
 
 func openFileWithDefaultApp(filePath string) error {

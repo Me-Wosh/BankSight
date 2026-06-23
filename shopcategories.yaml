@@ -35,6 +35,11 @@
 "pan viking": "Eating out/Delivery"
 "dos amigos event rumia": "Eating out/Delivery"
 "palec do budki": "Eating out/Delivery"
+"glodny niedzwiedz": "Eating out/Delivery"
+"woosabi": "Eating out/Delivery"
+"tawerna wilczy dol": "Eating out/Delivery"
+"arena catering krakow": "Eating out/Delivery"
+"mcdonalds": "Eating out/Delivery"
 
 # ===========================
 # Electronics / Media
@@ -85,12 +90,6 @@
 "opłaty": "Rent"
 
 # ===========================
-# Books / Media / Culture
-# ===========================
-"empik": "Culture"
-"empik.com": "Culture"
-
-# ===========================
 # Sports / Outdoor
 # ===========================
 "decathlon": "Sport"
@@ -135,6 +134,7 @@
 "systemfala.pl": "Transport"
 "zakup biletu komunikacyjnego": "Transport"
 "circle k": "Transport"
+"bolt.eu": "Transport"
 
 # ===========================
 # Subscriptions
@@ -150,14 +150,19 @@
 # Charity
 # ===========================
 "www.siepomaga.pl": "Charity"
-
-# ===========================
-# Toys
-# ===========================
-"strefa kostek": "Toys"
-"strefa-kostek.pl": "Toys"
+"wikimedia": "Charity"
 
 # ===========================
 # Savings
 # ===========================
 "przelew smart saver": "Savings"
+
+# ===========================
+# Entertainment
+# ===========================
+"strefa kostek": "Entertainment"
+"strefa-kostek.pl": "Entertainment"
+"empik": "Entertainment"
+"empik.com": "Entertainment"
+"store.steampowered.com": "Entertainment"
+"riotgames": "Entertainment"

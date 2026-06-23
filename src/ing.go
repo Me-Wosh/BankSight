@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"maps"
 	"math"
 	"strconv"
@@ -10,16 +11,22 @@ import (
 
 type ing struct{}
 
-func (ing *ing) prepareFile(filePath string) string {
+func (ing *ing) prepareFile(filePath string) (string, error) {
 	if !strings.HasSuffix(filePath, ".sta") {
-		panic("ING only supports MT940 (.sta) files.")
+		log.Println("ERROR: ING only supports MT940 (.sta) files.")
+		return "", fmt.Errorf("ERROR: ING only supports MT940 (.sta) files.")
 	}
 
 	return convertFileToUtf8(filePath)
 }
 
-func (ing *ing) calculateTotalTransactions(lines []string, debugFlag bool) transactions {
-	shopCategories := getShopCategories()
+func (ing *ing) calculateTotalTransactions(lines []string) (transactions, error) {
+	shopCategories, err := getShopCategories()
+
+	if err != nil {
+		return transactions{}, err
+	}
+
 	categorizedBalance := make(map[string]map[string]float64)
 
 	var (
@@ -43,16 +50,13 @@ func (ing *ing) calculateTotalTransactions(lines []string, debugFlag bool) trans
 			moneyPart := line[4+1+6+3+1:]
 			value, err := convertToValidFloat(moneyPart)
 
-			if err != nil && debugFlag {
-				fmt.Printf("Error while converting previous balance, expected a number got: %s instead\n", moneyPart)
+			if err != nil {
+				log.Printf("Error while converting previous balance, expected a number got: %s instead\n", moneyPart)
 				continue
 			}
 
 			previousBalance = value
-
-			if debugFlag {
-				fmt.Printf("INFO: Scanned previous balance: %.2f\n", previousBalance)
-			}
+			log.Printf("INFO: Scanned previous balance: %.2f\n", previousBalance)
 		} else if strings.HasPrefix(line, ":61:") {
 			if startDate == "" {
 				startDate = extractDatePart(line)
@@ -64,29 +68,30 @@ func (ing *ing) calculateTotalTransactions(lines []string, debugFlag bool) trans
 
 			value, err := convertToValidFloat(moneyPart[1:])
 
-			if err != nil && debugFlag {
-				fmt.Printf(
+			if err != nil {
+				log.Printf(
 					"WARNING: Could not convert transaction amount, expected a number but got: %s instead\n",
 					moneyPart,
 				)
 				continue
 			}
 
-			if moneyPart[0] == 'D' {
+			switch moneyPart[0] {
+			case 'D':
 				lastAmount = -value
 				spendings -= value
-			} else if moneyPart[0] == 'C' {
+			case 'C':
 				lastAmount = value
 				incomes += value
-			} else if debugFlag {
-				fmt.Printf(
+			default:
+				log.Printf(
 					"WARNING: Could not determine transaction type, expected 'D' or 'C' but got: %c instead\n",
 					moneyPart[0],
 				)
 			}
 		} else if strings.HasPrefix(line, "~21") {
-			shopSeparator := strings.Index(line, "~22")
-			shopPart := line[shopSeparator+3:]
+			_, after, _ := strings.Cut(line, "~22")
+			shopPart := after
 			joinedShopPartLines := strings.Replace(shopPart, "~33", "", 1)
 
 			key := strings.ToLower(joinedShopPartLines)
@@ -100,14 +105,12 @@ func (ing *ing) calculateTotalTransactions(lines []string, debugFlag bool) trans
 				categorizedBalance[category][key] += lastAmount
 				categorizedBalance[category][totalKey] += lastAmount
 
-				if debugFlag {
-					fmt.Printf(
-						"INFO: Found category '%s' for section '%s', amount: %.2f\n",
-						category,
-						joinedShopPartLines,
-						lastAmount,
-					)
-				}
+				log.Printf(
+					"INFO: Found category '%s' for section '%s', amount: %.2f\n",
+					category,
+					joinedShopPartLines,
+					lastAmount,
+				)
 
 				continue
 			}
@@ -123,14 +126,12 @@ func (ing *ing) calculateTotalTransactions(lines []string, debugFlag bool) trans
 				categorizedBalance[category][key] += lastAmount
 				categorizedBalance[category][totalKey] += lastAmount
 
-				if debugFlag {
-					fmt.Printf(
-						"INFO: Found category '%s' for section '%s', amount: %.2f\n",
-						category,
-						key,
-						lastAmount,
-					)
-				}
+				log.Printf(
+					"INFO: Found category '%s' for section '%s', amount: %.2f\n",
+					category,
+					key,
+					lastAmount,
+				)
 
 				continue
 			}
@@ -143,15 +144,13 @@ func (ing *ing) calculateTotalTransactions(lines []string, debugFlag bool) trans
 				categorizedBalance[otherCategory][joinedShopPartLines] += lastAmount
 				categorizedBalance[otherCategory][totalKey] += lastAmount
 
-				if debugFlag {
-					fmt.Printf(
-						"WARNING: No category found for '%s', nor '%s' adding to '%s', amount: %.2f\n",
-						joinedShopPartLines,
-						key,
-						otherCategory,
-						lastAmount,
-					)
-				}
+				log.Printf(
+					"WARNING: No category found for '%s', nor '%s' adding to '%s', amount: %.2f\n",
+					joinedShopPartLines,
+					key,
+					otherCategory,
+					lastAmount,
+				)
 			}
 
 			lastAmount = 0
@@ -160,32 +159,29 @@ func (ing *ing) calculateTotalTransactions(lines []string, debugFlag bool) trans
 			moneyPart := line[4+1+6+3+1:]
 			value, err := convertToValidFloat(moneyPart)
 
-			if err != nil && debugFlag {
-				fmt.Printf("Error while converting closing balance, expected a number got: %s instead\n", moneyPart)
+			if err != nil {
+				log.Printf("Error while converting closing balance, expected a number got: %s instead\n", moneyPart)
 				continue
 			}
 
 			closingBalance = value
-
-			if debugFlag {
-				fmt.Printf("INFO: Scanned closing balance: %.2f\n", closingBalance)
-			}
+			log.Printf("INFO: Scanned closing balance: %.2f\n", closingBalance)
 		}
 	}
 
 	calculatedBalance := previousBalance + spendings + incomes
 
 	if math.Abs(calculatedBalance-closingBalance) > 0.01 {
-		panic(fmt.Sprintf(
-			"Calculated balance (%.2f) does not match closing balance (%.2f)",
+		errorMessage := fmt.Sprintf(
+			"ERROR: Calculated balance (%.2f) does not match closing balance (%.2f)",
 			calculatedBalance,
 			closingBalance,
-		))
+		)
+		log.Println(errorMessage)
+		return transactions{}, fmt.Errorf(errorMessage)
 	}
 
-	if debugFlag {
-		fmt.Println("INFO: Calculated balance matches closing balance")
-	}
+	log.Println("INFO: Calculated balance matches closing balance")
 
 	var categorizedSpendings float64
 	categories := maps.Values(categorizedBalance)
@@ -194,30 +190,36 @@ func (ing *ing) calculateTotalTransactions(lines []string, debugFlag bool) trans
 		categorizedSpendings += category[totalKey]
 	}
 
-	if debugFlag {
-		fmt.Printf("INFO: Sum of categorized spendings: %.2f\n", categorizedSpendings)
-	}
+	log.Printf("INFO: Sum of categorized spendings: %.2f\n", categorizedSpendings)
 
 	if math.Abs(categorizedSpendings-spendings) > 0.01 {
-		panic(fmt.Sprintf(
-			"Sum of categorized spendings (%.2f) don't add up to calculated spendings (%.2f)",
+		errorMessage := fmt.Sprintf(
+			"ERROR: Sum of categorized spendings (%.2f) don't add up to calculated spendings (%.2f)",
 			categorizedSpendings,
 			spendings,
-		))
+		)
+		log.Println(errorMessage)
+		return transactions{}, fmt.Errorf(errorMessage)
+	}
+
+	timePeriod, err := ing.getTimePeriod(startDate, endDate)
+
+	if err != nil {
+		return transactions{}, err
 	}
 
 	return transactions{
-		timePeriod:         ing.getTimePeriod(startDate, endDate),
+		timePeriod:         timePeriod,
 		spendings:          spendings,
 		incomes:            incomes,
 		previousBalance:    previousBalance,
 		closingBalance:     closingBalance,
 		categorizedBalance: categorizedBalance,
 		difference:         closingBalance - previousBalance,
-	}
+	}, nil
 }
 
-func (ing *ing) getTimePeriod(startDate, endDate string) string {
+func (ing *ing) getTimePeriod(startDate, endDate string) (string, error) {
 	startYear := startDate[0:2]
 	startMonth := startDate[2:4]
 
@@ -229,7 +231,8 @@ func (ing *ing) getTimePeriod(startDate, endDate string) string {
 		yearNumber, err := strconv.Atoi(endYear)
 
 		if err != nil {
-			panic(fmt.Sprintf("Error while converting year: %s to number", endYear))
+			log.Printf("Error while converting year: %s to number\n", endYear)
+			return "", fmt.Errorf("Error while converting year: %s to number\n", endYear)
 		}
 
 		if yearNumber%4 == 0 {
@@ -241,7 +244,8 @@ func (ing *ing) getTimePeriod(startDate, endDate string) string {
 		monthNumber, err := strconv.Atoi(endMonth)
 
 		if err != nil {
-			panic(fmt.Sprintf("Error while converting month: %s to number", endMonth))
+			log.Printf("Error while converting month: %s to number\n", endMonth)
+			return "", fmt.Errorf("Error while converting month: %s to number\n", endMonth)
 		}
 
 		if monthNumber%2 == 0 {
@@ -251,5 +255,9 @@ func (ing *ing) getTimePeriod(startDate, endDate string) string {
 		}
 	}
 
-	return fmt.Sprintf("20%s.%s.%s - 20%s.%s.%s", startYear, startMonth, "01", endYear, endMonth, endDay)
+	return fmt.Sprintf("20%s.%s.%s - 20%s.%s.%s", startYear, startMonth, "01", endYear, endMonth, endDay), nil
+}
+
+func (ing *ing) getSupportedFileExtensions() []string {
+	return []string{".sta"}
 }

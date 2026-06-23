@@ -1,42 +1,42 @@
 package main
 
 import (
-	"fmt"
 	"io"
+	"log"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/transform"
 )
 
-func convertFileToUtf8(filePath string) string {
+func convertFileToUtf8(filePath string) (string, error) {
 	file, err := os.Open(filePath)
 
 	if err != nil {
-		panic(fmt.Sprintf("Error while opening the file: %v", err))
+		log.Printf("Error while opening the file: %v\n", err)
+		return "", err
 	}
 
 	defer file.Close()
 
 	reader := transform.NewReader(file, charmap.CodePage852.NewDecoder())
-
-	outputFilePath := "utf-8_" + strings.Replace(filepath.Base(filePath), ".sta", ".txt", 1)
-
-	outputFile, err := os.Create(outputFilePath)
+	outputFile, err := createTrackedTempFile(tempFilePatternMT940ToUTF)
 
 	if err != nil {
-		panic(fmt.Sprintf("Error while creating the file: %v", err))
+		log.Printf("Error while creating the file: %v\n", err)
+		return "", err
 	}
 
 	defer outputFile.Close()
+	outputFilePath := outputFile.Name()
 
 	if _, err := io.Copy(outputFile, reader); err != nil {
-		panic(fmt.Sprintf("Error while copying the file content: %v", err))
+		log.Printf("Error while copying the file content: %v\n", err)
+		return "", err
 	}
 
-	return outputFilePath
+	return outputFilePath, nil
 }
 
 func extractDatePart(line string) string {

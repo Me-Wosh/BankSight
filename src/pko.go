@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"maps"
 	"math"
 	"strings"
@@ -9,16 +10,22 @@ import (
 
 type pko struct{}
 
-func (pko *pko) prepareFile(filePath string) string {
+func (pko *pko) prepareFile(filePath string) (string, error) {
 	if !strings.HasSuffix(filePath, ".pdf") {
-		panic("PKO only supports PDF files.")
+		log.Println("ERROR: PKO only supports PDF files.")
+		return "", fmt.Errorf("ERROR: PKO only supports PDF files.")
 	}
 
 	return convertPdfToText(filePath)
 }
 
-func (pko *pko) calculateTotalTransactions(lines []string, debugFlag bool) transactions {
-	shopCategories := getShopCategories()
+func (pko *pko) calculateTotalTransactions(lines []string) (transactions, error) {
+	shopCategories, err := getShopCategories()
+
+	if err != nil {
+		return transactions{}, err
+	}
+
 	categorizedBalance := make(map[string]map[string]float64)
 	operations := map[string]struct{}{
 		"zakup":    {},
@@ -52,34 +59,22 @@ func (pko *pko) calculateTotalTransactions(lines []string, debugFlag bool) trans
 				validFloat, err := convertToValidFloat(sections[1])
 
 				if err != nil {
-					if debugFlag {
-						fmt.Println("WARNING: Failed to convert value. Expected a number, but got:", sections[1])
-					}
-
+					log.Println("WARNING: Failed to convert value. Expected a number, but got:", sections[1])
 					continue
 				}
 
 				previousBalance = validFloat
-
-				if debugFlag {
-					fmt.Printf("INFO: Scanned initial balance: %.2f\n", previousBalance)
-				}
+				log.Printf("INFO: Scanned initial balance: %.2f\n", previousBalance)
 			} else if sections[0] == closingBalanceLabel {
 				validFloat, err := convertToValidFloat(sections[1])
 
 				if err != nil {
-					if debugFlag {
-						fmt.Println("WARNING: Failed to convert value. Expected a number, but got:", sections[1])
-					}
-
+					log.Println("WARNING: Failed to convert value. Expected a number, but got:", sections[1])
 					continue
 				}
 
 				closingBalance = validFloat
-
-				if debugFlag {
-					fmt.Printf("INFO: Scanned closing balance: %.2f\n", closingBalance)
-				}
+				log.Printf("INFO: Scanned closing balance: %.2f\n", closingBalance)
 			}
 		}
 
@@ -114,14 +109,12 @@ func (pko *pko) calculateTotalTransactions(lines []string, debugFlag bool) trans
 					categorizedBalance[category][key] += lastAmount
 					categorizedBalance[category][totalKey] += lastAmount
 
-					if debugFlag {
-						fmt.Printf(
-							"INFO: Found category '%s' for section '%s', amount: %.2f\n",
-							category,
-							combinedSections,
-							lastAmount,
-						)
-					}
+					log.Printf(
+						"INFO: Found category '%s' for section '%s', amount: %.2f\n",
+						category,
+						combinedSections,
+						lastAmount,
+					)
 
 					break
 				}
@@ -135,14 +128,12 @@ func (pko *pko) calculateTotalTransactions(lines []string, debugFlag bool) trans
 				categorizedBalance[otherCategory][combinedSections] += lastAmount
 				categorizedBalance[otherCategory][totalKey] += lastAmount
 
-				if debugFlag {
-					fmt.Printf(
-						"WARNING: No category found for '%s', adding to '%s', amount: %.2f\n",
-						combinedSections,
-						otherCategory,
-						lastAmount,
-					)
-				}
+				log.Printf(
+					"WARNING: No category found for '%s', adding to '%s', amount: %.2f\n",
+					combinedSections,
+					otherCategory,
+					lastAmount,
+				)
 			}
 
 			lastOperation = ""
@@ -153,10 +144,7 @@ func (pko *pko) calculateTotalTransactions(lines []string, debugFlag bool) trans
 			validFloat, err := convertToValidFloat(sections[3])
 
 			if err != nil {
-				if debugFlag {
-					fmt.Println("WARNING: Failed to convert value. Expected a number, but got:", sections[3])
-				}
-
+				log.Println("WARNING: Failed to convert value. Expected a number, but got:", sections[3])
 				continue
 			}
 
@@ -164,9 +152,7 @@ func (pko *pko) calculateTotalTransactions(lines []string, debugFlag bool) trans
 			lastOperation = strings.ToLower(words[0])
 			lastAmount = validFloat
 
-			if debugFlag {
-				fmt.Println("INFO: Scanned number:", validFloat)
-			}
+			log.Println("INFO: Scanned number:", validFloat)
 
 			if validFloat < 0 {
 				spendings += validFloat
@@ -179,16 +165,16 @@ func (pko *pko) calculateTotalTransactions(lines []string, debugFlag bool) trans
 	calculatedBalance := previousBalance + spendings + incomes
 
 	if math.Abs(calculatedBalance-closingBalance) > 0.01 {
-		panic(fmt.Sprintf(
-			"Calculated balance (%.2f) does not match closing balance (%.2f)",
+		errorMessage := fmt.Sprintf(
+			"ERROR: Calculated balance (%.2f) does not match closing balance (%.2f)",
 			calculatedBalance,
 			closingBalance,
-		))
+		)
+		log.Println(errorMessage)
+		return transactions{}, fmt.Errorf(errorMessage)
 	}
 
-	if debugFlag {
-		fmt.Println("INFO: Calculated balance matches closing balance")
-	}
+	log.Println("INFO: Calculated balance matches closing balance")
 
 	var categorizedSpendings float64
 	categories := maps.Values(categorizedBalance)
@@ -197,16 +183,16 @@ func (pko *pko) calculateTotalTransactions(lines []string, debugFlag bool) trans
 		categorizedSpendings += category[totalKey]
 	}
 
-	if debugFlag {
-		fmt.Printf("INFO: Sum of categorized spendings: %.2f\n", categorizedSpendings)
-	}
+	log.Printf("INFO: Sum of categorized spendings: %.2f\n", categorizedSpendings)
 
 	if math.Abs(categorizedSpendings-spendings) > 0.01 {
-		panic(fmt.Sprintf(
-			"Sum of categorized spendings (%.2f) don't add up to calculated spendings (%.2f)",
+		errorMessage := fmt.Sprintf(
+			"ERROR: Sum of categorized spendings (%.2f) don't add up to calculated spendings (%.2f)",
 			categorizedSpendings,
 			spendings,
-		))
+		)
+		log.Println(errorMessage)
+		return transactions{}, fmt.Errorf(errorMessage)
 	}
 
 	return transactions{
@@ -217,11 +203,15 @@ func (pko *pko) calculateTotalTransactions(lines []string, debugFlag bool) trans
 		closingBalance:     closingBalance,
 		categorizedBalance: categorizedBalance,
 		difference:         closingBalance - previousBalance,
-	}
+	}, nil
 }
 
 func (pko *pko) getTimePeriod(lines []string) string {
 	periodLine := strings.ToLower(lines[4])
 	_, after, _ := strings.Cut(periodLine, "okres ")
 	return after
+}
+
+func (pko *pko) getSupportedFileExtensions() []string {
+	return []string{".pdf"}
 }

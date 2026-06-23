@@ -3,20 +3,20 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
 	"github.com/goccy/go-yaml"
 )
 
-func readAllLines(filePath string) []string {
+func readAllLines(filePath string) ([]string, error) {
 	file, err := os.Open(filePath)
 
 	if err != nil {
-		panic(fmt.Sprintf("Error while opening the file: %v", err))
+		log.Printf("Error while opening the file: %v\n", err)
+		return nil, err
 	}
-
-	defer file.Close()
 
 	var lines []string
 	scanner := bufio.NewScanner(file)
@@ -26,40 +26,48 @@ func readAllLines(filePath string) []string {
 	}
 
 	if err := scanner.Err(); err != nil {
-		panic(fmt.Sprintf("Error while reading the file: %v", err))
+		log.Printf("Error while reading the file: %v\n", err)
+		return nil, err
 	}
 
 	if len(lines) == 0 {
-		panic("Error while reading the file: No lines were read from the file.")
+		log.Println("Error while reading the file: No lines were read from the file.")
+		return nil, err
 	}
 
-	return lines
+	file.Close()
+	removeTrackedTempFile(filePath)
+
+	return lines, nil
 }
 
-func getShopCategories() map[string]string {
+func getShopCategories() (map[string]string, error) {
 	yamlFile, err := os.ReadFile(shopCategoriesFilePath)
 
 	if err != nil {
-		panic(fmt.Sprintf("Error while reading YAML file: %v", err))
+		log.Printf("Error while reading YAML file: %v\n", err)
+		return nil, err
 	}
 
 	var categories map[string]string
 
 	if err := yaml.Unmarshal(yamlFile, &categories); err != nil {
-		panic(fmt.Sprintf("Error while unmarshalling YAML file: %v", err))
+		log.Printf("Error while unmarshalling YAML file: %v\n", err)
+		return nil, err
 	}
 
-	return categories
+	return categories, nil
 }
 
-func getBank(bankFlag string) bank {
-	if strings.EqualFold(bankFlag, "pko") {
-		return &pko{}
+func getBank(bank string) (bank, error) {
+	if strings.EqualFold(bank, "pko") {
+		return &pko{}, nil
 	}
 
-	if strings.EqualFold(bankFlag, "ing") {
-		return &ing{}
+	if strings.EqualFold(bank, "ing") {
+		return &ing{}, nil
 	}
 
-	panic(fmt.Sprintf("Unsupported bank: %s", bankFlag))
+	log.Printf("ERROR: Unsupported bank: %s\n", bank)
+	return nil, fmt.Errorf("ERROR: Unsupported bank: %s", bank)
 }

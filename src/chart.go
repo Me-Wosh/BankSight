@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"maps"
-	"os"
+	"math"
 	"strings"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
@@ -13,7 +14,7 @@ import (
 	"github.com/go-echarts/go-echarts/v2/types"
 )
 
-func drawPieChart(transactions transactions, filePath string, openDefaultApp bool) {
+func drawPieChart(transactions transactions) error {
 	const (
 		totalKey        = "total"
 		regularFontSize = 14
@@ -26,10 +27,11 @@ func drawPieChart(transactions transactions, filePath string, openDefaultApp boo
 	closingBalance := transactions.closingBalance
 	categorizedBalance := transactions.categorizedBalance
 	difference := transactions.difference
+	leftOver := incomes - math.Abs(spendings)
 
 	spendingsIncomesData := []opts.PieData{
 		{Name: "Spendings", Value: fmt.Sprintf("%.2f", spendings*-1), Tooltip: &opts.Tooltip{Show: opts.Bool(false)}},
-		{Name: "Incomes", Value: fmt.Sprintf("%.2f", incomes), Tooltip: &opts.Tooltip{Show: opts.Bool(false)}},
+		{Name: "Left over", Value: fmt.Sprintf("%.2f", leftOver), Tooltip: &opts.Tooltip{Show: opts.Bool(false)}},
 	}
 
 	var categorizedSpendingsData []opts.PieData
@@ -106,22 +108,42 @@ func drawPieChart(transactions transactions, filePath string, openDefaultApp boo
 	page := components.NewPage()
 	page.SetPageTitle(appName)
 	page.SetLayout(components.PageFullLayout)
-	page.AddCustomizedCSSAssets(cssFilePath)
+	page.AddCustomizedHeaders(`
+		<style>
+			body {
+				margin: 0;
+			}
+
+			.container {
+				align-items: center;
+				box-sizing: border-box;
+				display: flex;
+				justify-content: center;
+				padding: 20px;
+			}
+		</style>
+	`)
 	page.AddCharts(pieChart)
 
-	file, err := os.Create(strings.Replace(filePath, ".txt", ".html", 1))
+	file, err := createTrackedTempFile(tempFilePatternStatement)
 
 	if err != nil {
-		panic(fmt.Sprintf("Error while creating HTML file: %v", err))
+		log.Println("Error while creating temporary HTML file: ", err)
+		return err
 	}
 
 	if err := page.Render(io.MultiWriter(file)); err != nil {
-		panic(fmt.Sprintf("Error while rendering HTML file: %v", err))
+		file.Close()
+		removeTrackedTempFile(file.Name())
+		log.Println("Error while rendering temporary HTML file: ", err)
+		return err
 	}
 
-	if openDefaultApp {
-		if err := openFileWithDefaultApp(file.Name()); err != nil {
-			fmt.Println("WARNING: could not open HTML file: ", err)
-		}
+	if err := openFileWithDefaultApp(file.Name()); err != nil {
+		removeTrackedTempFile(file.Name())
+		log.Println("ERROR: could not open temporary HTML file: ", err)
+		return err
 	}
+
+	return nil
 }

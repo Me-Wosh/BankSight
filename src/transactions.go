@@ -9,6 +9,7 @@ type transactions struct {
 }
 
 type bank interface {
-	prepareFile(filePath string) string
-	calculateTotalTransactions(lines []string, debugFlag bool) transactions
+	prepareFile(filePath string) (string, error)
+	calculateTotalTransactions(lines []string) (transactions, error)
+	getSupportedFileExtensions() []string
 }
