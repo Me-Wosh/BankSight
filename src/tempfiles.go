@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,6 +12,7 @@ const (
 	tempFilePatternPDFToText  = "banksight-converted-pdf-to-text-*.txt"
 	tempFilePatternStatement  = "banksight-statement-*.html"
 	tempFilePatternMT940ToUTF = "banksight-converted-mt940-to-utf8-*.txt"
+	tempFilePatternMBankToUTF = "banksight-converted-mbank-to-utf8-*.csv"
 )
 
 func createTrackedTempFile(pattern string) (*os.File, error) {
@@ -19,7 +22,7 @@ func createTrackedTempFile(pattern string) (*os.File, error) {
 func removeTrackedTempFile(filePath string) {
 	err := os.Remove(filePath)
 
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		log.Printf("WARNING: could not delete temporary file '%s': %v\n", filePath, err)
 	}
 }
@@ -35,6 +38,7 @@ func tempFilePatterns() []string {
 		filepath.Join(os.TempDir(), tempFilePatternPDFToText),
 		filepath.Join(os.TempDir(), tempFilePatternStatement),
 		filepath.Join(os.TempDir(), tempFilePatternMT940ToUTF),
+		filepath.Join(os.TempDir(), tempFilePatternMBankToUTF),
 	}
 }
 
@@ -49,7 +53,7 @@ func cleanupByPattern(pattern string) {
 	for _, match := range matches {
 		err = os.Remove(match)
 
-		if err != nil && !os.IsNotExist(err) {
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
 			log.Printf("WARNING: could not delete stale temporary file '%s': %v\n", match, err)
 		}
 	}

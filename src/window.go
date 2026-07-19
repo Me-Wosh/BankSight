@@ -19,7 +19,7 @@ func createMainWindow(a fyne.App, reader *os.File, writer *os.File) fyne.Window 
 	w := a.NewWindow("BankSight")
 
 	selectedBank := "PKO"
-	chooseBankRadio := widget.NewRadioGroup([]string{"PKO", "ING"}, func(bank string) {
+	chooseBankRadio := widget.NewRadioGroup([]string{"PKO", "ING", "mBank"}, func(bank string) {
 		selectedBank = bank
 	})
 	chooseBankRadio.SetSelected("PKO")
@@ -35,20 +35,16 @@ func createMainWindow(a fyne.App, reader *os.File, writer *os.File) fyne.Window 
 
 		bank, err := getBank(selectedBank)
 
-		if err != nil {
-			dialog.ShowError(err, w)
-			return
+		if err == nil {
+			fileOpenDialog.SetFilter(storage.NewExtensionFileFilter(bank.getSupportedFileExtensions()))
 		}
 
 		downloadsFolder, err := getDownloadsFolderLocation()
 
-		if err != nil {
-			dialog.ShowError(err, w)
-			return
+		if err == nil {
+			fileOpenDialog.SetLocation(downloadsFolder)
 		}
 
-		fileOpenDialog.SetFilter(storage.NewExtensionFileFilter(bank.getSupportedFileExtensions()))
-		fileOpenDialog.SetLocation(downloadsFolder)
 		fileOpenDialog.SetView(dialog.ListView)
 		fileOpenDialog.Resize(fyne.NewSize(650, 400))
 		fileOpenDialog.Show()
@@ -67,7 +63,7 @@ func createMainWindow(a fyne.App, reader *os.File, writer *os.File) fyne.Window 
 			return
 		}
 
-		getInsights(selectedBank, selectedFilePath, w)
+		getInsights(selectedBank, selectedFilePath, w, a)
 	})
 
 	terminal := widget.NewMultiLineEntry()
@@ -140,6 +136,7 @@ func getDownloadsFolderLocation() (fyne.ListableURI, error) {
 	homeDir, err := os.UserHomeDir()
 
 	if err != nil {
+		log.Printf("Error while getting home folder location: %v\n", err)
 		return nil, err
 	}
 
@@ -147,6 +144,7 @@ func getDownloadsFolderLocation() (fyne.ListableURI, error) {
 	downloadsListableURI, err := storage.ListerForURI(storage.NewFileURI(downloadsPath))
 
 	if err != nil {
+		log.Printf("Error while getting downloads folder location: %v\n", err)
 		return nil, err
 	}
 
@@ -158,7 +156,7 @@ func setSelectedFilePath(path string, selectedFilePath *string, selectedFileLabe
 	selectedFileLabel.SetText(filepath.Base(path))
 }
 
-func getInsights(selectedBank string, selectedFilePath string, w fyne.Window) {
+func getInsights(selectedBank string, selectedFilePath string, w fyne.Window, a fyne.App) {
 	bank, err := getBank(selectedBank)
 
 	if err != nil {
@@ -180,14 +178,23 @@ func getInsights(selectedBank string, selectedFilePath string, w fyne.Window) {
 		return
 	}
 
-	transactions, err := bank.calculateTotalTransactions(lines)
+	shopCategories, err := getShopCategories()
 
 	if err != nil {
 		dialog.ShowError(err, w)
 		return
 	}
 
-	err = drawPieChart(transactions)
+	transactions, err := bank.calculateTotalTransactions(lines, shopCategories)
+
+	if err != nil {
+		dialog.ShowError(err, w)
+		return
+	}
+
+	isDarkTheme := a.Settings().ThemeVariant() == theme.VariantDark
+
+	err = drawPieChart(transactions, isDarkTheme)
 
 	if err != nil {
 		dialog.ShowError(err, w)

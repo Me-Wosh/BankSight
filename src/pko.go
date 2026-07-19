@@ -1,10 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"errors"
 	"log"
 	"maps"
-	"math"
 	"strings"
 )
 
@@ -13,19 +12,13 @@ type pko struct{}
 func (pko *pko) prepareFile(filePath string) (string, error) {
 	if !strings.HasSuffix(filePath, ".pdf") {
 		log.Println("ERROR: PKO only supports PDF files.")
-		return "", fmt.Errorf("ERROR: PKO only supports PDF files.")
+		return "", errors.New("ERROR: PKO only supports PDF files.")
 	}
 
 	return convertPdfToText(filePath)
 }
 
-func (pko *pko) calculateTotalTransactions(lines []string) (transactions, error) {
-	shopCategories, err := getShopCategories()
-
-	if err != nil {
-		return transactions{}, err
-	}
-
+func (pko *pko) calculateTotalTransactions(lines []string, shopCategories map[string]string) (transactions, error) {
 	categorizedBalance := make(map[string]map[string]float64)
 	operations := map[string]struct{}{
 		"zakup":    {},
@@ -59,7 +52,11 @@ func (pko *pko) calculateTotalTransactions(lines []string) (transactions, error)
 				validFloat, err := convertToValidFloat(sections[1])
 
 				if err != nil {
-					log.Println("WARNING: Failed to convert value. Expected a number, but got:", sections[1])
+					log.Printf(
+						"WARNING: Failed to convert previous balance. Expected a number, but got: %s. Error: %v\n",
+						sections[1],
+						err,
+					)
 					continue
 				}
 
@@ -69,7 +66,11 @@ func (pko *pko) calculateTotalTransactions(lines []string) (transactions, error)
 				validFloat, err := convertToValidFloat(sections[1])
 
 				if err != nil {
-					log.Println("WARNING: Failed to convert value. Expected a number, but got:", sections[1])
+					log.Printf(
+						"WARNING: Failed to convert closing balance. Expected a number, but got: %s. Error: %v\n",
+						sections[1],
+						err,
+					)
 					continue
 				}
 
@@ -144,7 +145,11 @@ func (pko *pko) calculateTotalTransactions(lines []string) (transactions, error)
 			validFloat, err := convertToValidFloat(sections[3])
 
 			if err != nil {
-				log.Println("WARNING: Failed to convert value. Expected a number, but got:", sections[3])
+				log.Printf(
+					"WARNING: Failed to convert value. Expected a number, but got: %s. Error: %v\n",
+					sections[3],
+					err,
+				)
 				continue
 			}
 
@@ -162,37 +167,16 @@ func (pko *pko) calculateTotalTransactions(lines []string) (transactions, error)
 		}
 	}
 
-	calculatedBalance := previousBalance + spendings + incomes
+	err := validateCalculatedBalance(previousBalance, spendings, incomes, closingBalance)
 
-	if math.Abs(calculatedBalance-closingBalance) > 0.01 {
-		errorMessage := fmt.Sprintf(
-			"ERROR: Calculated balance (%.2f) does not match closing balance (%.2f)",
-			calculatedBalance,
-			closingBalance,
-		)
-		log.Println(errorMessage)
-		return transactions{}, fmt.Errorf(errorMessage)
+	if err != nil {
+		return transactions{}, err
 	}
 
-	log.Println("INFO: Calculated balance matches closing balance")
+	err = validateCategorizedSpendings(categorizedBalance, spendings, totalKey)
 
-	var categorizedSpendings float64
-	categories := maps.Values(categorizedBalance)
-
-	for category := range categories {
-		categorizedSpendings += category[totalKey]
-	}
-
-	log.Printf("INFO: Sum of categorized spendings: %.2f\n", categorizedSpendings)
-
-	if math.Abs(categorizedSpendings-spendings) > 0.01 {
-		errorMessage := fmt.Sprintf(
-			"ERROR: Sum of categorized spendings (%.2f) don't add up to calculated spendings (%.2f)",
-			categorizedSpendings,
-			spendings,
-		)
-		log.Println(errorMessage)
-		return transactions{}, fmt.Errorf(errorMessage)
+	if err != nil {
+		return transactions{}, err
 	}
 
 	return transactions{

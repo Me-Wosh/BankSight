@@ -16,6 +16,7 @@
 "auchan": "Groceries/Household"
 "e.leclerc": "Groceries/Household"
 "makro": "Groceries/Household"
+"delikatesy \"justynk": "Groceries/Household"
 
 # ===========================
 # Eating out / Delivery
@@ -24,6 +25,7 @@
 "kfc": "Eating out/Delivery"
 
 "uber * eats": "Eating out/Delivery"
+"uber   *eats": "Eating out/Delivery"
 "uber.com": "Eating out/Delivery"
 
 "pyszne.pl": "Eating out/Delivery"
@@ -40,19 +42,20 @@
 "tawerna wilczy dol": "Eating out/Delivery"
 "arena catering krakow": "Eating out/Delivery"
 "mcdonalds": "Eating out/Delivery"
+"sushipak.pl": "Eating out/Delivery"
+"power food": "Eating out/Delivery"
 
 # ===========================
 # Electronics / Media
 # ===========================
-"mediamarkt": "Electronics"
-"rtv euro agd": "Electronics"
-"komputronik": "Electronics"
-"neonet": "Electronics"
-
 "media expert": "Electronics"
 "www.mediaexpert.pl": "Electronics"
 "terg spółka akcyjna": "Electronics"
 
+"mediamarkt": "Electronics"
+"rtv euro agd": "Electronics"
+"komputronik": "Electronics"
+"neonet": "Electronics"
 "morele.net": "Electronics"
 "x-kom": "Electronics"
 "euro.com.pl": "Electronics"
@@ -82,6 +85,7 @@
 "black red white": "Home"
 "agata meble": "Home"
 "jysk": "Home"
+"fdm.pl": "Home"
 
 # ===========================
 # Rent / Utilities
@@ -135,11 +139,16 @@
 "zakup biletu komunikacyjnego": "Transport"
 "circle k": "Transport"
 "bolt.eu": "Transport"
+"shell": "Transport"
+"koleje malopolskie": "Transport"
+"intercity.pl": "Transport"
 
 # ===========================
 # Subscriptions
 # ===========================
 "apple.com/bill": "Subscriptions"
+"spotify": "Subscriptions"
+"wanikani japanese": "Subscriptions"
 
 # ===========================
 # Services
@@ -151,6 +160,7 @@
 # ===========================
 "www.siepomaga.pl": "Charity"
 "wikimedia": "Charity"
+"www.uniwersytetdzieci.pl": "Charity"
 
 # ===========================
 # Savings
@@ -162,7 +172,14 @@
 # ===========================
 "strefa kostek": "Entertainment"
 "strefa-kostek.pl": "Entertainment"
+
 "empik": "Entertainment"
 "empik.com": "Entertainment"
+
 "store.steampowered.com": "Entertainment"
+"www.store.steampowered.co": "Entertainment"
+
 "riotgames": "Entertainment"
+"riot*": "Entertainment"
+
+"eneba.com": "Entertainment"

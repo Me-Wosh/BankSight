@@ -3,11 +3,14 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/goccy/go-yaml"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/transform"
 )
 
 func readAllLines(filePath string) ([]string, error) {
@@ -68,6 +71,39 @@ func getBank(bank string) (bank, error) {
 		return &ing{}, nil
 	}
 
+	if strings.EqualFold(bank, "mbank") {
+		return &mbank{}, nil
+	}
+
 	log.Printf("ERROR: Unsupported bank: %s\n", bank)
 	return nil, fmt.Errorf("ERROR: Unsupported bank: %s", bank)
+}
+
+func convertFileToUtf8(filePath string, decoder *encoding.Decoder, tempFilePattern string) (string, error) {
+	file, err := os.Open(filePath)
+
+	if err != nil {
+		log.Printf("Error while opening the file: %v\n", err)
+		return "", err
+	}
+
+	defer file.Close()
+
+	reader := transform.NewReader(file, decoder)
+	outputFile, err := createTrackedTempFile(tempFilePattern)
+
+	if err != nil {
+		log.Printf("Error while creating the file: %v\n", err)
+		return "", err
+	}
+
+	defer outputFile.Close()
+	outputFilePath := outputFile.Name()
+
+	if _, err := io.Copy(outputFile, reader); err != nil {
+		log.Printf("Error while copying the file content: %v\n", err)
+		return "", err
+	}
+
+	return outputFilePath, nil
 }

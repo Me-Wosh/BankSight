@@ -1,12 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
-	"maps"
-	"math"
 	"strconv"
 	"strings"
+
+	"golang.org/x/text/encoding/charmap"
 )
 
 type ing struct{}
@@ -14,19 +15,13 @@ type ing struct{}
 func (ing *ing) prepareFile(filePath string) (string, error) {
 	if !strings.HasSuffix(filePath, ".sta") {
 		log.Println("ERROR: ING only supports MT940 (.sta) files.")
-		return "", fmt.Errorf("ERROR: ING only supports MT940 (.sta) files.")
+		return "", errors.New("ERROR: ING only supports MT940 (.sta) files.")
 	}
 
-	return convertFileToUtf8(filePath)
+	return convertFileToUtf8(filePath, charmap.CodePage852.NewDecoder(), tempFilePatternMT940ToUTF)
 }
 
-func (ing *ing) calculateTotalTransactions(lines []string) (transactions, error) {
-	shopCategories, err := getShopCategories()
-
-	if err != nil {
-		return transactions{}, err
-	}
-
+func (ing *ing) calculateTotalTransactions(lines []string, shopCategories map[string]string) (transactions, error) {
 	categorizedBalance := make(map[string]map[string]float64)
 
 	var (
@@ -51,7 +46,11 @@ func (ing *ing) calculateTotalTransactions(lines []string) (transactions, error)
 			value, err := convertToValidFloat(moneyPart)
 
 			if err != nil {
-				log.Printf("Error while converting previous balance, expected a number got: %s instead\n", moneyPart)
+				log.Printf(
+					"WARNING: Failed to convert previous balance. Expected a number, but got: %s. Error: %v\n",
+					moneyPart,
+					err,
+				)
 				continue
 			}
 
@@ -70,8 +69,9 @@ func (ing *ing) calculateTotalTransactions(lines []string) (transactions, error)
 
 			if err != nil {
 				log.Printf(
-					"WARNING: Could not convert transaction amount, expected a number but got: %s instead\n",
+					"WARNING: Failed to convert transaction amount. Expected a number, but got: %s. Error: %v\n",
 					moneyPart,
+					err,
 				)
 				continue
 			}
@@ -160,7 +160,11 @@ func (ing *ing) calculateTotalTransactions(lines []string) (transactions, error)
 			value, err := convertToValidFloat(moneyPart)
 
 			if err != nil {
-				log.Printf("Error while converting closing balance, expected a number got: %s instead\n", moneyPart)
+				log.Printf(
+					"WARNING: Failed to convert closing balance. Expected a number, but got: %s. Error: %v\n",
+					moneyPart,
+					err,
+				)
 				continue
 			}
 
@@ -169,37 +173,16 @@ func (ing *ing) calculateTotalTransactions(lines []string) (transactions, error)
 		}
 	}
 
-	calculatedBalance := previousBalance + spendings + incomes
+	err := validateCalculatedBalance(previousBalance, spendings, incomes, closingBalance)
 
-	if math.Abs(calculatedBalance-closingBalance) > 0.01 {
-		errorMessage := fmt.Sprintf(
-			"ERROR: Calculated balance (%.2f) does not match closing balance (%.2f)",
-			calculatedBalance,
-			closingBalance,
-		)
-		log.Println(errorMessage)
-		return transactions{}, fmt.Errorf(errorMessage)
+	if err != nil {
+		return transactions{}, err
 	}
 
-	log.Println("INFO: Calculated balance matches closing balance")
+	err = validateCategorizedSpendings(categorizedBalance, spendings, totalKey)
 
-	var categorizedSpendings float64
-	categories := maps.Values(categorizedBalance)
-
-	for category := range categories {
-		categorizedSpendings += category[totalKey]
-	}
-
-	log.Printf("INFO: Sum of categorized spendings: %.2f\n", categorizedSpendings)
-
-	if math.Abs(categorizedSpendings-spendings) > 0.01 {
-		errorMessage := fmt.Sprintf(
-			"ERROR: Sum of categorized spendings (%.2f) don't add up to calculated spendings (%.2f)",
-			categorizedSpendings,
-			spendings,
-		)
-		log.Println(errorMessage)
-		return transactions{}, fmt.Errorf(errorMessage)
+	if err != nil {
+		return transactions{}, err
 	}
 
 	timePeriod, err := ing.getTimePeriod(startDate, endDate)
