@@ -1,4 +1,4 @@
-package main
+package bank
 
 import (
 	"errors"
@@ -8,21 +8,23 @@ import (
 	"math"
 	"strings"
 
+	"github.com/Me-Wosh/BankSight/internal/file"
+	"github.com/Me-Wosh/BankSight/internal/input"
 	"golang.org/x/text/encoding/charmap"
 )
 
-type mbank struct{}
+type MBank struct{}
 
-func (m *mbank) prepareFile(filePath string) (string, error) {
+func (mBank *MBank) PrepareFile(filePath string) (string, error) {
 	if !strings.HasSuffix(filePath, ".csv") {
 		log.Println("ERROR: mBank only supports CSV files.")
 		return "", errors.New("ERROR: mBank only supports CSV files.")
 	}
 
-	return convertFileToUtf8(filePath, charmap.Windows1250.NewDecoder(), tempFilePatternMBankToUTF)
+	return file.ConvertToUtf8(filePath, charmap.Windows1250.NewDecoder(), file.MBankToUTFTempFilePattern)
 }
 
-func (m *mbank) calculateTotalTransactions(lines []string, shopCategories map[string]string) (transactions, error) {
+func (mBank *MBank) CalculateTotalTransactions(lines []string, shopCategories map[string]string) (Transactions, error) {
 	categorizedBalance := make(map[string]map[string]float64)
 
 	var (
@@ -59,7 +61,7 @@ func (m *mbank) calculateTotalTransactions(lines []string, shopCategories map[st
 		switch sections[0] {
 		case periodLabel:
 			if i+1 < len(lines) {
-				timePeriod = m.parseTimePeriod(lines[i+1])
+				timePeriod = mBank.parseTimePeriod(lines[i+1])
 			}
 
 		case incomesLabel:
@@ -67,7 +69,7 @@ func (m *mbank) calculateTotalTransactions(lines []string, shopCategories map[st
 				continue
 			}
 
-			validFloat, err := convertToValidFloat(strings.TrimSuffix(sections[2], " PLN"))
+			validFloat, err := input.ConvertToValidFloat(strings.TrimSuffix(sections[2], " PLN"))
 
 			if err != nil {
 				log.Printf(
@@ -85,7 +87,7 @@ func (m *mbank) calculateTotalTransactions(lines []string, shopCategories map[st
 				continue
 			}
 
-			validFloat, err := convertToValidFloat(strings.TrimSuffix(strings.TrimSpace(sections[2]), " PLN"))
+			validFloat, err := input.ConvertToValidFloat(strings.TrimSuffix(strings.TrimSpace(sections[2]), " PLN"))
 
 			if err != nil {
 				log.Printf(
@@ -103,7 +105,7 @@ func (m *mbank) calculateTotalTransactions(lines []string, shopCategories map[st
 				continue
 			}
 
-			validFloat, err := convertToValidFloat(strings.TrimSuffix(sections[1], " PLN"))
+			validFloat, err := input.ConvertToValidFloat(strings.TrimSuffix(sections[1], " PLN"))
 
 			if err != nil {
 				log.Printf(
@@ -121,7 +123,7 @@ func (m *mbank) calculateTotalTransactions(lines []string, shopCategories map[st
 		// Closing balance is at position [6] in ";;;;;;#Saldo końcowe;345,78 PLN;"
 		if sectionsLength == 8 && sections[6] == closingBalanceLabel {
 			closingBalanceValue := strings.TrimSuffix(sections[7], " PLN")
-			validFloat, err := convertToValidFloat(closingBalanceValue)
+			validFloat, err := input.ConvertToValidFloat(closingBalanceValue)
 
 			if err != nil {
 				log.Printf(
@@ -143,7 +145,7 @@ func (m *mbank) calculateTotalTransactions(lines []string, shopCategories map[st
 			continue
 		}
 
-		validFloat, err := convertToValidFloat(strings.TrimSpace(sections[6]))
+		validFloat, err := input.ConvertToValidFloat(strings.TrimSpace(sections[6]))
 
 		if err != nil {
 			log.Printf(
@@ -228,13 +230,13 @@ func (m *mbank) calculateTotalTransactions(lines []string, shopCategories map[st
 	err := validateCalculatedBalance(previousBalance, spendings, incomes, closingBalance)
 
 	if err != nil {
-		return transactions{}, err
+		return Transactions{}, err
 	}
 
 	err = validateCategorizedSpendings(categorizedBalance, spendings, totalKey)
 
 	if err != nil {
-		return transactions{}, err
+		return Transactions{}, err
 	}
 
 	if math.Abs(math.Abs(spendings)-expectedSpendings) > 0.01 {
@@ -245,7 +247,7 @@ func (m *mbank) calculateTotalTransactions(lines []string, shopCategories map[st
 		)
 		log.Println(errorMessage)
 
-		return transactions{}, errors.New(errorMessage)
+		return Transactions{}, errors.New(errorMessage)
 	}
 
 	if math.Abs(incomes-expectedIncomes) > 0.01 {
@@ -256,21 +258,25 @@ func (m *mbank) calculateTotalTransactions(lines []string, shopCategories map[st
 		)
 		log.Println(errorMessage)
 
-		return transactions{}, errors.New(errorMessage)
+		return Transactions{}, errors.New(errorMessage)
 	}
 
-	return transactions{
-		timePeriod:         timePeriod,
-		spendings:          spendings,
-		incomes:            incomes,
-		previousBalance:    previousBalance,
-		closingBalance:     closingBalance,
-		categorizedBalance: categorizedBalance,
-		difference:         closingBalance - previousBalance,
+	return Transactions{
+		TimePeriod:         timePeriod,
+		Spendings:          spendings,
+		Incomes:            incomes,
+		PreviousBalance:    previousBalance,
+		ClosingBalance:     closingBalance,
+		CategorizedBalance: categorizedBalance,
+		Difference:         closingBalance - previousBalance,
 	}, nil
 }
 
-func (m *mbank) parseTimePeriod(line string) string {
+func (mBank *MBank) GetSupportedFileExtensions() []string {
+	return []string{".csv"}
+}
+
+func (mBank *MBank) parseTimePeriod(line string) string {
 	fields := strings.SplitN(line, ";", 3)
 
 	if len(fields) < 2 {
@@ -278,10 +284,6 @@ func (m *mbank) parseTimePeriod(line string) string {
 	}
 
 	return fmt.Sprintf("%s - %s", fields[0], fields[1])
-}
-
-func (m *mbank) getSupportedFileExtensions() []string {
-	return []string{".csv"}
 }
 
 // Splits a semicolon-delimited line respecting double-quoted fields.

@@ -1,4 +1,4 @@
-package main
+package input
 
 import (
 	"regexp"
@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func convertToValidFloat(str string) (float64, error) {
+func ConvertToValidFloat(str string) (float64, error) {
 	removedSpaces := strings.ReplaceAll(str, " ", "")
 	validFloatFormat := strings.ReplaceAll(removedSpaces, ",", ".")
 	validFloat, err := strconv.ParseFloat(validFloatFormat, 64)
@@ -18,7 +18,7 @@ func convertToValidFloat(str string) (float64, error) {
 	return validFloat, nil
 }
 
-func divideLineIntoSections(line string) []string {
+func DivideLineIntoSections(line string) []string {
 	line = strings.TrimSpace(line)
 	sections := regexp.MustCompile(" {2,}").Split(line, -1) // divide line into sections on two or more spaces
 

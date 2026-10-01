@@ -1,24 +1,26 @@
-package main
+package bank
 
 import (
 	"errors"
 	"log"
 	"maps"
 	"strings"
+
+	"github.com/Me-Wosh/BankSight/internal/file"
+	"github.com/Me-Wosh/BankSight/internal/input"
 )
 
-type pko struct{}
+type PKO struct{}
 
-func (pko *pko) prepareFile(filePath string) (string, error) {
+func (pko *PKO) PrepareFile(filePath string) (string, error) {
 	if !strings.HasSuffix(filePath, ".pdf") {
 		log.Println("ERROR: PKO only supports PDF files.")
 		return "", errors.New("ERROR: PKO only supports PDF files.")
 	}
 
-	return convertPdfToText(filePath)
+	return file.ConvertPdfToText(filePath)
 }
-
-func (pko *pko) calculateTotalTransactions(lines []string, shopCategories map[string]string) (transactions, error) {
+func (pko *PKO) CalculateTotalTransactions(lines []string, shopCategories map[string]string) (Transactions, error) {
 	categorizedBalance := make(map[string]map[string]float64)
 	operations := map[string]struct{}{
 		"zakup":    {},
@@ -44,12 +46,12 @@ func (pko *pko) calculateTotalTransactions(lines []string, shopCategories map[st
 	)
 
 	for _, line := range lines {
-		sections := divideLineIntoSections(line)
+		sections := input.DivideLineIntoSections(line)
 		sectionsLength := len(sections)
 
 		if sectionsLength == 2 {
 			if sections[0] == previousBalanceLabel {
-				validFloat, err := convertToValidFloat(sections[1])
+				validFloat, err := input.ConvertToValidFloat(sections[1])
 
 				if err != nil {
 					log.Printf(
@@ -63,7 +65,7 @@ func (pko *pko) calculateTotalTransactions(lines []string, shopCategories map[st
 				previousBalance = validFloat
 				log.Printf("INFO: Scanned initial balance: %.2f\n", previousBalance)
 			} else if sections[0] == closingBalanceLabel {
-				validFloat, err := convertToValidFloat(sections[1])
+				validFloat, err := input.ConvertToValidFloat(sections[1])
 
 				if err != nil {
 					log.Printf(
@@ -142,7 +144,7 @@ func (pko *pko) calculateTotalTransactions(lines []string, shopCategories map[st
 		}
 
 		if sectionsLength == 5 {
-			validFloat, err := convertToValidFloat(sections[3])
+			validFloat, err := input.ConvertToValidFloat(sections[3])
 
 			if err != nil {
 				log.Printf(
@@ -170,32 +172,32 @@ func (pko *pko) calculateTotalTransactions(lines []string, shopCategories map[st
 	err := validateCalculatedBalance(previousBalance, spendings, incomes, closingBalance)
 
 	if err != nil {
-		return transactions{}, err
+		return Transactions{}, err
 	}
 
 	err = validateCategorizedSpendings(categorizedBalance, spendings, totalKey)
 
 	if err != nil {
-		return transactions{}, err
+		return Transactions{}, err
 	}
 
-	return transactions{
-		timePeriod:         pko.getTimePeriod(lines),
-		spendings:          spendings,
-		incomes:            incomes,
-		previousBalance:    previousBalance,
-		closingBalance:     closingBalance,
-		categorizedBalance: categorizedBalance,
-		difference:         closingBalance - previousBalance,
+	return Transactions{
+		TimePeriod:         pko.getTimePeriod(lines),
+		Spendings:          spendings,
+		Incomes:            incomes,
+		PreviousBalance:    previousBalance,
+		ClosingBalance:     closingBalance,
+		CategorizedBalance: categorizedBalance,
+		Difference:         closingBalance - previousBalance,
 	}, nil
 }
 
-func (pko *pko) getTimePeriod(lines []string) string {
+func (pko *PKO) GetSupportedFileExtensions() []string {
+	return []string{".pdf"}
+}
+
+func (pko *PKO) getTimePeriod(lines []string) string {
 	periodLine := strings.ToLower(lines[4])
 	_, after, _ := strings.Cut(periodLine, "okres ")
 	return after
-}
-
-func (pko *pko) getSupportedFileExtensions() []string {
-	return []string{".pdf"}
 }

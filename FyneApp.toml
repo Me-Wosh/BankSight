@@ -1,6 +1,6 @@
 [Details]
-Icon = "../Icon.png"
+Icon = "Icon.png"
 Name = "BankSight"
 ID = "com.mewosh.banksight"
 Version = "1.0.0"
-Build = 2
+Build = 1

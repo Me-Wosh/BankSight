@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"fmt"
@@ -8,25 +8,27 @@ import (
 	"math"
 	"strings"
 
+	"github.com/Me-Wosh/BankSight/internal/bank"
+	"github.com/Me-Wosh/BankSight/internal/file"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/components"
 	"github.com/go-echarts/go-echarts/v2/opts"
 	"github.com/go-echarts/go-echarts/v2/types"
 )
 
-func drawPieChart(transactions transactions, isDarkTheme bool) error {
+func drawPieChart(transactions bank.Transactions, isDarkTheme bool) error {
 	const (
 		totalKey        = "total"
 		regularFontSize = 14
 	)
 
-	timePeriod := transactions.timePeriod
-	spendings := transactions.spendings
-	incomes := transactions.incomes
-	previousBalance := transactions.previousBalance
-	closingBalance := transactions.closingBalance
-	categorizedBalance := transactions.categorizedBalance
-	difference := transactions.difference
+	timePeriod := transactions.TimePeriod
+	spendings := transactions.Spendings
+	incomes := transactions.Incomes
+	previousBalance := transactions.PreviousBalance
+	closingBalance := transactions.ClosingBalance
+	categorizedBalance := transactions.CategorizedBalance
+	difference := transactions.Difference
 	leftOver := incomes - math.Abs(spendings)
 
 	spendingsIncomesData := []opts.PieData{
@@ -185,22 +187,22 @@ func drawPieChart(transactions transactions, isDarkTheme bool) error {
 	`, backgroundColor))
 	page.AddCharts(pieChart)
 
-	file, err := createTrackedTempFile(tempFilePatternStatement)
+	f, err := file.CreateTrackedTempFile(file.StatementTempFilePattern)
 
 	if err != nil {
 		log.Println("Error while creating temporary HTML file: ", err)
 		return err
 	}
 
-	if err := page.Render(io.MultiWriter(file)); err != nil {
-		file.Close()
-		removeTrackedTempFile(file.Name())
+	if err := page.Render(io.MultiWriter(f)); err != nil {
+		f.Close()
+		file.RemoveTrackedTempFile(f.Name())
 		log.Println("Error while rendering temporary HTML file: ", err)
 		return err
 	}
 
-	if err := openFileWithDefaultApp(file.Name()); err != nil {
-		removeTrackedTempFile(file.Name())
+	if err := file.OpenWithDefaultApp(f.Name()); err != nil {
+		file.RemoveTrackedTempFile(f.Name())
 		log.Println("ERROR: could not open temporary HTML file: ", err)
 		return err
 	}

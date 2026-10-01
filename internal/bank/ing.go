@@ -1,4 +1,4 @@
-package main
+package bank
 
 import (
 	"errors"
@@ -7,21 +7,24 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Me-Wosh/BankSight/internal/file"
+	"github.com/Me-Wosh/BankSight/internal/input"
+
 	"golang.org/x/text/encoding/charmap"
 )
 
-type ing struct{}
+type ING struct{}
 
-func (ing *ing) prepareFile(filePath string) (string, error) {
+func (ing *ING) PrepareFile(filePath string) (string, error) {
 	if !strings.HasSuffix(filePath, ".sta") {
 		log.Println("ERROR: ING only supports MT940 (.sta) files.")
 		return "", errors.New("ERROR: ING only supports MT940 (.sta) files.")
 	}
 
-	return convertFileToUtf8(filePath, charmap.CodePage852.NewDecoder(), tempFilePatternMT940ToUTF)
+	return file.ConvertToUtf8(filePath, charmap.CodePage852.NewDecoder(), file.MT940ToUTFTempFilePattern)
 }
 
-func (ing *ing) calculateTotalTransactions(lines []string, shopCategories map[string]string) (transactions, error) {
+func (ing *ING) CalculateTotalTransactions(lines []string, shopCategories map[string]string) (Transactions, error) {
 	categorizedBalance := make(map[string]map[string]float64)
 
 	var (
@@ -43,7 +46,7 @@ func (ing *ing) calculateTotalTransactions(lines []string, shopCategories map[st
 		if strings.HasPrefix(line, ":60F:") {
 			// prefix, balance sign 1f, date 6dF, currency 3a
 			moneyPart := line[4+1+6+3+1:]
-			value, err := convertToValidFloat(moneyPart)
+			value, err := input.ConvertToValidFloat(moneyPart)
 
 			if err != nil {
 				log.Printf(
@@ -65,7 +68,7 @@ func (ing *ing) calculateTotalTransactions(lines []string, shopCategories map[st
 
 			moneyPart := extractMoneyPart(line)
 
-			value, err := convertToValidFloat(moneyPart[1:])
+			value, err := input.ConvertToValidFloat(moneyPart[1:])
 
 			if err != nil {
 				log.Printf(
@@ -157,7 +160,7 @@ func (ing *ing) calculateTotalTransactions(lines []string, shopCategories map[st
 		} else if strings.HasPrefix(line, ":62F:") {
 			// prefix, balance sign 1f, date 6dF, currency 3a
 			moneyPart := line[4+1+6+3+1:]
-			value, err := convertToValidFloat(moneyPart)
+			value, err := input.ConvertToValidFloat(moneyPart)
 
 			if err != nil {
 				log.Printf(
@@ -176,33 +179,37 @@ func (ing *ing) calculateTotalTransactions(lines []string, shopCategories map[st
 	err := validateCalculatedBalance(previousBalance, spendings, incomes, closingBalance)
 
 	if err != nil {
-		return transactions{}, err
+		return Transactions{}, err
 	}
 
 	err = validateCategorizedSpendings(categorizedBalance, spendings, totalKey)
 
 	if err != nil {
-		return transactions{}, err
+		return Transactions{}, err
 	}
 
 	timePeriod, err := ing.getTimePeriod(startDate, endDate)
 
 	if err != nil {
-		return transactions{}, err
+		return Transactions{}, err
 	}
 
-	return transactions{
-		timePeriod:         timePeriod,
-		spendings:          spendings,
-		incomes:            incomes,
-		previousBalance:    previousBalance,
-		closingBalance:     closingBalance,
-		categorizedBalance: categorizedBalance,
-		difference:         closingBalance - previousBalance,
+	return Transactions{
+		TimePeriod:         timePeriod,
+		Spendings:          spendings,
+		Incomes:            incomes,
+		PreviousBalance:    previousBalance,
+		ClosingBalance:     closingBalance,
+		CategorizedBalance: categorizedBalance,
+		Difference:         closingBalance - previousBalance,
 	}, nil
 }
 
-func (ing *ing) getTimePeriod(startDate, endDate string) (string, error) {
+func (ing *ING) GetSupportedFileExtensions() []string {
+	return []string{".sta"}
+}
+
+func (ing *ING) getTimePeriod(startDate, endDate string) (string, error) {
 	startYear := startDate[0:2]
 	startMonth := startDate[2:4]
 
@@ -241,6 +248,22 @@ func (ing *ing) getTimePeriod(startDate, endDate string) (string, error) {
 	return fmt.Sprintf("20%s.%s.%s - 20%s.%s.%s", startYear, startMonth, "01", endYear, endMonth, endDay), nil
 }
 
-func (ing *ing) getSupportedFileExtensions() []string {
-	return []string{".sta"}
+func extractDatePart(line string) string {
+	// prefix, date of transaction 6dF
+	return line[4 : 4+6]
+}
+
+func extractMoneyPart(line string) string {
+	var moneyPart strings.Builder
+
+	// prefix, date of transaction 6dF, date of post 4dF
+	for i := 4 + 6 + 4; i < len(line); i++ {
+		if line[i] == 'S' {
+			break
+		}
+
+		moneyPart.WriteByte(line[i])
+	}
+
+	return moneyPart.String()
 }

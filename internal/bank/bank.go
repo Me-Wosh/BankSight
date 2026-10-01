@@ -1,4 +1,4 @@
-package main
+package bank
 
 import (
 	"errors"
@@ -6,20 +6,38 @@ import (
 	"log"
 	"maps"
 	"math"
+	"strings"
 )
 
-type transactions struct {
-	timePeriod                      string
-	spendings, incomes              float64
-	previousBalance, closingBalance float64
-	difference                      float64
-	categorizedBalance              map[string]map[string]float64
+type Bank interface {
+	PrepareFile(filePath string) (string, error)
+	CalculateTotalTransactions(lines []string, shopCategories map[string]string) (Transactions, error)
+	GetSupportedFileExtensions() []string
 }
 
-type bank interface {
-	prepareFile(filePath string) (string, error)
-	calculateTotalTransactions(lines []string, shopCategories map[string]string) (transactions, error)
-	getSupportedFileExtensions() []string
+type Transactions struct {
+	TimePeriod                      string
+	Spendings, Incomes              float64
+	PreviousBalance, ClosingBalance float64
+	Difference                      float64
+	CategorizedBalance              map[string]map[string]float64
+}
+
+func GetBank(selectedBank string) (Bank, error) {
+	if strings.EqualFold(selectedBank, "pko") {
+		return &PKO{}, nil
+	}
+
+	if strings.EqualFold(selectedBank, "ing") {
+		return &ING{}, nil
+	}
+
+	if strings.EqualFold(selectedBank, "mbank") {
+		return &MBank{}, nil
+	}
+
+	log.Printf("ERROR: Unsupported bank: %s\n", selectedBank)
+	return nil, fmt.Errorf("ERROR: Unsupported bank: %s", selectedBank)
 }
 
 func validateCalculatedBalance(previousBalance, spendings, incomes, closingBalance float64) error {

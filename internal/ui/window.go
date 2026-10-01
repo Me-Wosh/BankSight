@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"bufio"
@@ -13,10 +13,14 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/Me-Wosh/BankSight/internal/bank"
+	"github.com/Me-Wosh/BankSight/internal/file"
 )
 
-func createMainWindow(a fyne.App, reader *os.File, writer *os.File) fyne.Window {
-	w := a.NewWindow("BankSight")
+const appName = "BankSight"
+
+func CreateMainWindow(a fyne.App, reader *os.File, writer *os.File, shopCategories map[string]string) fyne.Window {
+	w := a.NewWindow(appName)
 
 	selectedBank := "PKO"
 	chooseBankRadio := widget.NewRadioGroup([]string{"PKO", "ING", "mBank"}, func(bank string) {
@@ -33,10 +37,10 @@ func createMainWindow(a fyne.App, reader *os.File, writer *os.File) fyne.Window 
 			onFileOpen(reader, w, &selectedFilePath, selectedFileLabel, err)
 		}, w)
 
-		bank, err := getBank(selectedBank)
+		b, err := bank.GetBank(selectedBank)
 
 		if err == nil {
-			fileOpenDialog.SetFilter(storage.NewExtensionFileFilter(bank.getSupportedFileExtensions()))
+			fileOpenDialog.SetFilter(storage.NewExtensionFileFilter(b.GetSupportedFileExtensions()))
 		}
 
 		downloadsFolder, err := getDownloadsFolderLocation()
@@ -63,7 +67,7 @@ func createMainWindow(a fyne.App, reader *os.File, writer *os.File) fyne.Window 
 			return
 		}
 
-		getInsights(selectedBank, selectedFilePath, w, a)
+		getInsights(selectedBank, selectedFilePath, shopCategories, w, a)
 	})
 
 	terminal := widget.NewMultiLineEntry()
@@ -156,36 +160,29 @@ func setSelectedFilePath(path string, selectedFilePath *string, selectedFileLabe
 	selectedFileLabel.SetText(filepath.Base(path))
 }
 
-func getInsights(selectedBank string, selectedFilePath string, w fyne.Window, a fyne.App) {
-	bank, err := getBank(selectedBank)
+func getInsights(selectedBank, selectedFilePath string, shopCategories map[string]string, w fyne.Window, a fyne.App) {
+	b, err := bank.GetBank(selectedBank)
 
 	if err != nil {
 		dialog.ShowError(err, w)
 		return
 	}
 
-	textFilePath, err := bank.prepareFile(selectedFilePath)
+	textFilePath, err := b.PrepareFile(selectedFilePath)
 
 	if err != nil {
 		dialog.ShowError(err, w)
 		return
 	}
 
-	lines, err := readAllLines(textFilePath)
+	lines, err := file.ReadAllLines(textFilePath)
 
 	if err != nil {
 		dialog.ShowError(err, w)
 		return
 	}
 
-	shopCategories, err := getShopCategories()
-
-	if err != nil {
-		dialog.ShowError(err, w)
-		return
-	}
-
-	transactions, err := bank.calculateTotalTransactions(lines, shopCategories)
+	transactions, err := b.CalculateTotalTransactions(lines, shopCategories)
 
 	if err != nil {
 		dialog.ShowError(err, w)
