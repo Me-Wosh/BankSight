@@ -50,8 +50,8 @@ func CreateMainWindow(a fyne.App, reader *os.File, writer *os.File, shopCategori
 		}
 
 		fileOpenDialog.SetView(dialog.ListView)
-		fileOpenDialog.Resize(fyne.NewSize(650, 400))
 		fileOpenDialog.Show()
+		fileOpenDialog.Resize(fyne.NewSize(650, 400))
 	})
 
 	w.SetOnDropped(func(_ fyne.Position, u []fyne.URI) {
@@ -108,8 +108,12 @@ func CreateMainWindow(a fyne.App, reader *os.File, writer *os.File, shopCategori
 		),
 	)
 
-	w.Resize(fyne.NewSize(800, 0))
-	w.SetFixedSize(true)
+	w.Resize(fyne.NewSize(800, content.MinSize().Height))
+	// It is a known Fyne issue that the application window stays blank after restoring it from minimized state on
+	// Windows. This only happens when SetFixedSize is set to true. The fix is on the way but until then the window
+	// needs to stay resizable.
+	// See https://github.com/fyne-io/fyne/issues/4350
+	// w.SetFixedSize(true)
 	w.CenterOnScreen()
 	w.SetContent(content)
 

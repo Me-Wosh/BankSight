@@ -201,6 +201,8 @@ func drawPieChart(transactions bank.Transactions, isDarkTheme bool) error {
 		return err
 	}
 
+	f.Close()
+
 	if err := file.OpenWithDefaultApp(f.Name()); err != nil {
 		file.RemoveTrackedTempFile(f.Name())
 		log.Println("ERROR: could not open temporary HTML file: ", err)

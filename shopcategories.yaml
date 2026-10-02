@@ -44,6 +44,8 @@
 "mcdonalds": "Eating out/Delivery"
 "sushipak.pl": "Eating out/Delivery"
 "power food": "Eating out/Delivery"
+"avocado spot": "Eating out/Delivery"
+"agnieszka sierac fuka": "Eating out/Delivery"
 
 # ===========================
 # Electronics / Media
@@ -166,6 +168,7 @@
 # Savings
 # ===========================
 "przelew smart saver": "Savings"
+"obligacje": "Savings"
 
 # ===========================
 # Entertainment

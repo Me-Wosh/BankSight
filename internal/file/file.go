@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
@@ -38,6 +39,8 @@ func ReadAllLines(filePath string) ([]string, error) {
 		lines = append(lines, scanner.Text())
 	}
 
+	f.Close()
+
 	if err := scanner.Err(); err != nil {
 		log.Printf("Error while reading the file: %v\n", err)
 		return nil, err
@@ -48,7 +51,6 @@ func ReadAllLines(filePath string) ([]string, error) {
 		return nil, err
 	}
 
-	f.Close()
 	RemoveTrackedTempFile(filePath)
 
 	return lines, nil
@@ -110,17 +112,28 @@ func OpenWithDefaultApp(filePath string) error {
 	case "darwin": // macOS
 		cmd = exec.Command("open", filePath)
 	case "windows":
-		cmd = exec.Command("cmd", "/c", "start", "", filePath) // this doesn't work on windows
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", filePath)
 	case "linux":
 		cmd = exec.Command("xdg-open", filePath)
 	default:
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
 
-	return cmd.Run()
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		outStr := strings.TrimSpace(string(output))
+
+		if outStr != "" {
+			return fmt.Errorf("%w: %s", err, outStr)
+		}
+
+		return err
+	}
+
+	return nil
 }
 
-// or something here doesn't work on windows
 func CreateTrackedTempFile(pattern string) (*os.File, error) {
 	return os.CreateTemp("", pattern)
 }
@@ -134,17 +147,15 @@ func RemoveTrackedTempFile(filePath string) {
 }
 
 func CleanupTempFiles() {
-	for _, pattern := range tempFilePatterns() {
-		cleanupByPattern(pattern)
-	}
-}
-
-func tempFilePatterns() []string {
-	return []string{
+	tempFilePatterns := []string{
 		filepath.Join(os.TempDir(), pdfToTextTempFilePattern),
 		filepath.Join(os.TempDir(), StatementTempFilePattern),
 		filepath.Join(os.TempDir(), MT940ToUTFTempFilePattern),
 		filepath.Join(os.TempDir(), MBankToUTFTempFilePattern),
+	}
+
+	for _, pattern := range tempFilePatterns {
+		cleanupByPattern(pattern)
 	}
 }
 
